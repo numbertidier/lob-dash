@@ -11,7 +11,8 @@
 <meta name="theme-color" content="#050607">
 <link rel="apple-touch-icon" href="icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="flow.css">
 <script src="https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
 <style>
 /* Layout: terminal desk look after BOT.DASH. One column on phone. Strips for section titles, mono throughout. */
@@ -40,7 +41,8 @@
   --accent: #222222; --num: #000000; --up: #161616; --down: #161616; --book: #000000; --leg1: #4a4a4a; --leg2: #8a8a8a;
   --fund: #9a9a9a; --bid: #3a3a3a; --ask: #9a9a9a; --on-accent: #f7f7f7; color-scheme: light;
 }
-:root[data-theme="read"] body { filter: grayscale(1); }
+/* The filter sits on the P&L views only: a filter on body breaks position: fixed in the Flow tab (dock, sheets). */
+:root[data-theme="read"] .wrap > :not(#view-flow) { filter: grayscale(1); }
 :root[data-theme="read"] .down { font-weight: 600; }
 /* Warm: blue-light free. Amber, orange and red on black only. */
 :root[data-theme="warm"] {
@@ -48,6 +50,13 @@
   --accent: #ff9a2e; --num: #ffc46b; --up: #ffd27a; --down: #ff4a2a; --book: #ffd9a6; --leg1: #ff7a3d; --leg2: #ffc46b;
   --fund: #c2703a; --bid: #ffd27a; --ask: #ff4a2a; --on-accent: #070403; color-scheme: dark;
 }
+/* Mono: pure black, white and greys only (shared "mono" tokens). Losses are grey and italic, and keep their minus sign. */
+:root[data-theme="mono"] {
+  --bg: #000000; --panel: #000000; --strip: #161616; --ink: #ffffff; --ink2: #d4d4d4; --muted: #9a9a9a; --line: #3a3a3a;
+  --accent: #ffffff; --num: #ffffff; --up: #ffffff; --down: #8f8f8f; --book: #ffffff; --leg1: #bdbdbd; --leg2: #8a8a8a;
+  --fund: #a6a6a6; --bid: #ffffff; --ask: #8f8f8f; --on-accent: #000000; color-scheme: dark;
+}
+:root[data-theme="mono"] .down { font-style: italic; }
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
 html, body { margin: 0; }
@@ -138,22 +147,16 @@ tbody tr.pick:hover td, tbody tr.sel td { background: color-mix(in srgb, var(--a
 <body>
 <div class="wrap">
   <header>
-    <div class="row"><h1>LOB<span>.DESK</span></h1><span class="live" id="live" hidden>● LIVE</span><span class="stamp">v5</span></div>
+    <div class="row"><h1>LOB<span>.DESK</span></h1><span class="live" id="live" hidden>● LIVE</span><span class="stamp">v6</span></div>
     <div class="row">
       <div class="stamp" id="stamp">not loaded</div>
       <div class="seg" id="themeSeg" role="group" aria-label="Night or day mode">
-        <button aria-pressed="true" data-theme-pick="dark">☾ Night</button><button aria-pressed="false" data-theme-pick="light">☀ Day</button><button aria-pressed="false" data-theme-pick="read">◐ Read</button><button aria-pressed="false" data-theme-pick="warm">◒ Warm</button>
+        <button aria-pressed="true" data-theme-pick="dark">☾ Night</button><button aria-pressed="false" data-theme-pick="light">☀ Day</button><button aria-pressed="false" data-theme-pick="read">◐ Read</button><button aria-pressed="false" data-theme-pick="warm">◒ Warm</button><button aria-pressed="false" data-theme-pick="mono">■ Mono</button>
       </div>
       <button id="refresh" aria-label="Refresh now">↻</button>
     </div>
   </header>
 
-  <section class="panel setup" id="setup" hidden>
-    <h2>Set up</h2>
-    <label for="addr">Hyperliquid master address. Stored on this phone only.</label>
-    <input id="addr" placeholder="0x…" autocomplete="off" autocapitalize="off" spellcheck="false">
-    <div class="row"><button id="save">Save and load</button><span class="err" id="setupErr"></span></div>
-  </section>
 
   <div class="controls" id="tabs" hidden>
     <nav class="seg" role="tablist" id="tabList">
@@ -161,6 +164,7 @@ tbody tr.pick:hover td, tbody tr.sel td { background: color-mix(in srgb, var(--a
       <button role="tab" aria-selected="false" data-tab="d30">Last 30 days</button>
       <button role="tab" aria-selected="false" data-tab="all">All</button>
       <button role="tab" aria-selected="false" data-tab="lob">Order book</button>
+      <button role="tab" aria-selected="false" data-tab="flow">Flow</button>
     </nav>
     <div class="row" id="barRow"><span class="lbl">BARS</span>
       <div class="seg" id="barSeg">
@@ -168,6 +172,13 @@ tbody tr.pick:hover td, tbody tr.sel td { background: color-mix(in srgb, var(--a
       </div>
     </div>
   </div>
+
+  <section class="panel setup" id="setup" hidden>
+    <h2>Set up</h2>
+    <label for="addr">Hyperliquid master address. Stored on this phone only.</label>
+    <input id="addr" placeholder="0x…" autocomplete="off" autocapitalize="off" spellcheck="false">
+    <div class="row"><button id="save">Save and load</button><span class="err" id="setupErr"></span></div>
+  </section>
 
   <main id="view-pnl" hidden>
     <div class="window" id="windowLine"></div>
@@ -226,10 +237,14 @@ tbody tr.pick:hover td, tbody tr.sel td { background: color-mix(in srgb, var(--a
       <div class="legend"><span><i style="background:var(--bid)"></i>Bids, cumulative $</span><span><i style="background:var(--ask)"></i>Asks, cumulative $</span><span><i style="background:var(--accent)"></i>Our size</span></div>
     </section>
   </main>
+  <section class="flow" id="view-flow" hidden aria-label="Live BTC order flow"></section>
   <div class="loading" id="loading" hidden><span class="spin">↻</span> Loading from Hyperliquid…</div>
   <p class="err" id="err"></p>
 </div>
 
+<script src="flow-shared.js"></script>
+<script src="flow-engine.js"></script>
+<script src="flow.js"></script>
 <script>
 "use strict";
 /* ---------- pure logic (also run by node tests) ---------- */
@@ -573,11 +588,12 @@ if (typeof document !== "undefined") (() => {
   const TAB_KEY = "lob.tab.v1";
   const BAR_KEY = "lob.bar.v1";
   const THEME_KEY = "lob.theme.v1";
-  const THEMES = { dark: "Night", light: "Day", read: "Read", warm: "Warm" };
+  const THEMES = { dark: "Night", light: "Day", read: "Read", warm: "Warm", mono: "Mono" };
   const COIN_PALETTES = {
     dark: ["#d9534f", "#2fa36b", "#8a6fd0", "#c9a227", "#2aa3c4", "#d1478f", "#5a8f29", "#3f6fd8", "#d9822b", "#20a39e"],
     read: ["#202020", "#4a4a4a", "#6a6a6a", "#8a8a8a", "#a5a5a5", "#353535", "#5a5a5a", "#7a7a7a", "#959595", "#b0b0b0"],
     warm: ["#ff4a2a", "#ffc46b", "#ff7a3d", "#e0a040", "#ff9a6a", "#c2502a", "#ffd9a6", "#d96a1a", "#ffb03a", "#a8401f"],
+    mono: ["#ffffff", "#c8c8c8", "#9a9a9a", "#e4e4e4", "#b0b0b0", "#7c7c7c", "#f2f2f2", "#d6d6d6", "#a4a4a4", "#8a8a8a"],
   };
   const coinColor = (i) => { const pal = COIN_PALETTES[state.theme] || COIN_PALETTES.dark; return pal[i % pal.length]; };
   const REFRESH_MS = { today: 60e3, d30: 300e3, all: 300e3, lob: 60e3 };
@@ -899,10 +915,48 @@ if (typeof document !== "undefined") (() => {
     $("ladderReadout").textContent = `mid ${b.mid.toPrecision(6)}  spread ${num(b.spreadBp, 1)}bp  ours ${sUsd(b.notional)}  exit via ${b.exit}s`;
   }
 
+  /* ---- Flow tab: live BTC order flow (flow.js). Mounted on first open; the engine runs only while it is shown. ---- */
+  const query = new URLSearchParams(location.search);
+  const flow = { ui: null, life: null, fixture: null, sim: query.get("sim") === "1" };
+  window.__flow = flow;   // debug handle: __flow.life.engine.state(), __flow.life.stats() (socket counts)
+  async function openFlow() {
+    if (!flow.ui) {
+      if (typeof FlowUI === "undefined" || typeof FlowEngine === "undefined") { $("err").textContent = "Flow scripts did not load. Reload the page."; return; }
+      if (flow.sim && !flow.fixture) {
+        try { flow.fixture = await (await fetch("fixture.json")).json(); }
+        catch (e) { $("err").textContent = `Replay fixture did not load: ${e.message}`; return; }
+        if (state.tab !== "flow" || flow.ui) return;
+      }
+      flow.life = new FlowLife({ makeEngine: flow.sim ? () => new FlowSim(flow.fixture) : () => FlowEngine.createEngine({ phone: true, proxyBase: null }) });
+      flow.life.setPage(!document.hidden);
+      flow.ui = FlowUI.mount($("view-flow"), flow.life, { theme: state.theme, offVenues: flow.sim ? [] : ["KuCoin"],
+                                                          footer: flow.sim ? "Replay of a recorded 20 minute session. " : "" });
+    }
+    if (state.tab !== "flow") return;
+    flow.ui.setActive(true);
+    flow.life.setTab(true);
+  }
+  function closeFlow() {
+    if (!flow.ui) return;
+    flow.ui.setActive(false);
+    flow.life.setTab(false);
+  }
+
   function show(tab) {
     state.tab = tab;
     store.set(TAB_KEY, tab);
     for (const btn of $("tabList").querySelectorAll("button")) btn.setAttribute("aria-selected", String(btn.dataset.tab === tab));
+    const isFlow = tab === "flow";
+    $("view-flow").hidden = !isFlow;
+    $("stamp").hidden = isFlow; $("refresh").hidden = isFlow;   // P&L load stamp and pull button: not used by Flow
+    if (isFlow) {
+      for (const id of ["barRow", "view-pnl", "view-lob", "loading", "setup"]) $(id).hidden = true;
+      openFlow();
+      return;
+    }
+    closeFlow();
+    if (!state.master) { showSetup(); return; }
+    $("setup").hidden = true;
     const isPnl = tab !== "lob";
     $("barRow").hidden = !isPnl;
     const ready = isPnl ? !!state.views[tab] : !!state.books;
@@ -913,7 +967,7 @@ if (typeof document !== "undefined") (() => {
   }
 
   async function refresh(force = false) {
-    if (!state.master || state.busy) return;
+    if (!state.master || state.busy || state.tab === "flow") return;
     const tab = state.tab;
     if (!force && state.loadedAt[tab] && Date.now() - state.loadedAt[tab] < REFRESH_MS[tab] - 1000) return;
     state.busy = true;
@@ -949,14 +1003,14 @@ if (typeof document !== "undefined") (() => {
   }
 
   function showSetup(message = "") {
-    $("setup").hidden = false; $("tabs").hidden = true; $("view-pnl").hidden = true; $("view-lob").hidden = true; $("loading").hidden = true;
+    $("setup").hidden = false; $("view-pnl").hidden = true; $("view-lob").hidden = true; $("loading").hidden = true; $("barRow").hidden = true;
     $("setupErr").textContent = message;
   }
 
   $("save").onclick = () => {
     const v = $("addr").value.trim();
     if (!LOB.isAddress(v)) { $("setupErr").textContent = "That is not a 0x address with 40 hex characters."; return; }
-    store.set(KEY, v); state.master = v; $("setup").hidden = true; $("tabs").hidden = false; show(state.tab); refresh(true);
+    store.set(KEY, v); state.master = v; $("setup").hidden = true; show(state.tab); refresh(true);
   };
   $("forget").onclick = () => { store.clear(KEY); state.master = null; state.views = {}; state.books = null; state.fills = new Map(); state.loadedAt = {}; state.cache = { candles: new Map(), funding: new Map() }; $("addr").value = ""; showSetup(); };
   $("refresh").onclick = () => refresh(true);
@@ -973,13 +1027,17 @@ if (typeof document !== "undefined") (() => {
     for (const c of Object.values(charts)) c.chart.applyOptions(chartTheme());
     if (state.tab !== "lob" && state.views[state.tab]) renderPnl(true);
     if (state.tab === "lob" && state.books) renderLob();
+    if (flow.ui) flow.ui.setTheme(state.theme);
   }
   for (const b of $("themeSeg").querySelectorAll("button")) b.onclick = () => {
     state.theme = b.dataset.themePick; store.set(THEME_KEY, state.theme); applyTheme();
   };
   for (const btn of $("tabList").querySelectorAll("button")) btn.onclick = () => { show(btn.dataset.tab); refresh(); };
   for (const btn of document.querySelectorAll("[data-fit]")) btn.onclick = () => charts[btn.dataset.fit]?.chart.timeScale().fitContent();
-  document.addEventListener("visibilitychange", () => { if (!document.hidden) refresh(); });
+  document.addEventListener("visibilitychange", () => {
+    if (flow.life) flow.life.setPage(!document.hidden);
+    if (!document.hidden) refresh();
+  });
   setInterval(() => { if (!document.hidden) refresh(); }, 15000);
 
   const savedBar = store.get(BAR_KEY);
@@ -989,9 +1047,13 @@ if (typeof document !== "undefined") (() => {
   if (savedTheme && THEMES[savedTheme]) state.theme = savedTheme;
   applyTheme();
   const savedTab = store.get(TAB_KEY);
-  if (savedTab && REFRESH_MS[savedTab]) state.tab = savedTab;
+  if (savedTab && (REFRESH_MS[savedTab] || savedTab === "flow")) state.tab = savedTab;
+  if (query.get("tab") && (REFRESH_MS[query.get("tab")] || query.get("tab") === "flow")) state.tab = query.get("tab");
   const saved = store.get(KEY);
-  if (saved && LOB.isAddress(saved)) { state.master = saved; $("tabs").hidden = false; show(state.tab); refresh(true); } else showSetup();
+  if (saved && LOB.isAddress(saved)) state.master = saved;
+  $("tabs").hidden = false;
+  show(state.tab);
+  if (state.master) refresh(true);
 })();
 </script>
 </body>

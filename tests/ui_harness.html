@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>flow ui harness</title>
+<link rel="stylesheet" href="../flow.css">
+<style>body { margin: 0; background: #000; width: 390px; }</style>
+</head>
+<body>
+<section class="flow" id="root"></section>
+<script src="../flow-shared.js"></script>
+<script src="../flow.js"></script>
+<script>
+"use strict";
+// Test harness for tests/flow_ui.test.js: a fake engine the test drives with emit(state).
+window.errors = [];
+window.addEventListener("error", (e) => window.errors.push(e.message));
+const subs = new Set();
+window.src = {
+  subscribe(fn) { subs.add(fn); return () => subs.delete(fn); },
+  /** Deliver a state the way the engine does: subscriber errors are caught and logged, not thrown. */
+  emit(st) { for (const fn of subs) { try { fn(st); } catch (e) { window.errors.push(e.message); } } },
+};
+window.ui = FlowUI.mount(document.getElementById("root"), window.src, { theme: "dark", offVenues: ["KuCoin"] });
+</script>
+</body>
+</html>
