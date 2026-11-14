@@ -138,7 +138,7 @@ tbody tr.pick:hover td, tbody tr.sel td { background: color-mix(in srgb, var(--a
 <body>
 <div class="wrap">
   <header>
-    <div class="row"><h1>LOB<span>.DESK</span></h1><span class="live" id="live" hidden>● LIVE</span><span class="stamp">v4</span></div>
+    <div class="row"><h1>LOB<span>.DESK</span></h1><span class="live" id="live" hidden>● LIVE</span><span class="stamp">v5</span></div>
     <div class="row">
       <div class="stamp" id="stamp">not loaded</div>
       <div class="seg" id="themeSeg" role="group" aria-label="Night or day mode">
@@ -667,8 +667,8 @@ if (typeof document !== "undefined") (() => {
     for (const l of lines) {
       let s = entry.series.get(l.name);
       if (!s) {
-        const api = entry.chart.addLineSeries({ color: l.color, lineWidth: l.width || 2, lineStyle: l.dashed ? 2 : 0,
-                                                priceLineVisible: false, lastValueVisible: false, crosshairMarkerRadius: 3 });
+        const api = entry.chart.addLineSeries({ color: l.color, lineWidth: 1, lineStyle: l.dashed ? 2 : 0,
+                                                priceLineVisible: false, lastValueVisible: false, crosshairMarkerRadius: 2 });
         if (l.zeroLine) api.createPriceLine({ price: 0, color: css("--muted"), lineStyle: 2, lineWidth: 1, axisLabelVisible: false });
         s = { api, visible: l.visible !== false };
         entry.series.set(l.name, s);
