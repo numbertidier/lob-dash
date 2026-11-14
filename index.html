@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -34,6 +34,20 @@
   --accent: #b35c00; --num: #1f5fd6; --up: #0b8a55; --down: #c62f2f; --book: #121417; --leg1: #1f5fd6; --leg2: #b35c00;
   --fund: #7a4fd0; --bid: #0b8a55; --ask: #c62f2f; --on-accent: #ffffff; color-scheme: light;
 }
+/* Read: pure greyscale for long reading. Gains and losses are read from their sign. */
+:root[data-theme="read"] {
+  --bg: #ececec; --panel: #f7f7f7; --strip: #e2e2e2; --ink: #161616; --ink2: #3a3a3a; --muted: #6e6e6e; --line: #cfcfcf;
+  --accent: #222222; --num: #000000; --up: #161616; --down: #161616; --book: #000000; --leg1: #4a4a4a; --leg2: #8a8a8a;
+  --fund: #9a9a9a; --bid: #3a3a3a; --ask: #9a9a9a; --on-accent: #f7f7f7; color-scheme: light;
+}
+:root[data-theme="read"] body { filter: grayscale(1); }
+:root[data-theme="read"] .down { font-weight: 600; }
+/* Warm: blue-light free. Amber, orange and red on black only. */
+:root[data-theme="warm"] {
+  --bg: #070403; --panel: #0e0805; --strip: #1a0f08; --ink: #ffb870; --ink2: #d98f4e; --muted: #8a5a32; --line: #2a1a0e;
+  --accent: #ff9a2e; --num: #ffc46b; --up: #ffd27a; --down: #ff4a2a; --book: #ffd9a6; --leg1: #ff7a3d; --leg2: #ffc46b;
+  --fund: #c2703a; --bid: #ffd27a; --ask: #ff4a2a; --on-accent: #070403; color-scheme: dark;
+}
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
 html, body { margin: 0; }
@@ -46,7 +60,7 @@ body {
   padding-right: max(12px, env(safe-area-inset-right, 0px)); display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
 .wrap > *, main > * { min-width: 0; }
 main { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-block: 10px 0;
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 10px; padding-block: 10px 0;
   border-bottom: 1px solid var(--line); padding-bottom: 8px; }
 h1 { font-size: 15px; margin: 0; letter-spacing: .08em; font-weight: 600; color: var(--accent); }
 h1 span { color: var(--ink2); font-weight: 400; }
@@ -124,10 +138,12 @@ tbody tr.pick:hover td, tbody tr.sel td { background: color-mix(in srgb, var(--a
 <body>
 <div class="wrap">
   <header>
-    <div class="row"><h1>LOB<span>.DESK</span></h1><span class="live" id="live" hidden>● LIVE</span></div>
+    <div class="row"><h1>LOB<span>.DESK</span></h1><span class="live" id="live" hidden>● LIVE</span><span class="stamp">v4</span></div>
     <div class="row">
       <div class="stamp" id="stamp">not loaded</div>
-      <button id="theme" aria-label="Switch night or day mode">Auto</button>
+      <div class="seg" id="themeSeg" role="group" aria-label="Night or day mode">
+        <button aria-pressed="true" data-theme-pick="dark">☾ Night</button><button aria-pressed="false" data-theme-pick="light">☀ Day</button><button aria-pressed="false" data-theme-pick="read">◐ Read</button><button aria-pressed="false" data-theme-pick="warm">◒ Warm</button>
+      </div>
       <button id="refresh" aria-label="Refresh now">↻</button>
     </div>
   </header>
@@ -557,14 +573,19 @@ if (typeof document !== "undefined") (() => {
   const TAB_KEY = "lob.tab.v1";
   const BAR_KEY = "lob.bar.v1";
   const THEME_KEY = "lob.theme.v1";
-  const THEMES = { auto: "Auto", dark: "Night", light: "Day" };
-  const COIN_COLORS = ["#d9534f", "#2fa36b", "#8a6fd0", "#c9a227", "#2aa3c4", "#d1478f", "#5a8f29", "#3f6fd8", "#d9822b", "#20a39e"];
+  const THEMES = { dark: "Night", light: "Day", read: "Read", warm: "Warm" };
+  const COIN_PALETTES = {
+    dark: ["#d9534f", "#2fa36b", "#8a6fd0", "#c9a227", "#2aa3c4", "#d1478f", "#5a8f29", "#3f6fd8", "#d9822b", "#20a39e"],
+    read: ["#202020", "#4a4a4a", "#6a6a6a", "#8a8a8a", "#a5a5a5", "#353535", "#5a5a5a", "#7a7a7a", "#959595", "#b0b0b0"],
+    warm: ["#ff4a2a", "#ffc46b", "#ff7a3d", "#e0a040", "#ff9a6a", "#c2502a", "#ffd9a6", "#d96a1a", "#ffb03a", "#a8401f"],
+  };
+  const coinColor = (i) => { const pal = COIN_PALETTES[state.theme] || COIN_PALETTES.dark; return pal[i % pal.length]; };
   const REFRESH_MS = { today: 60e3, d30: 300e3, all: 300e3, lob: 60e3 };
   const midnight = () => { const d = new Date(); return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()); };
   const VIEW_START = { today: () => midnight() - 60e3, d30: () => midnight() - 30 * LOB.DAY_MS, all: () => 0 };
 
   const state = { master: null, tab: "today", busy: false, accounts: null, fills: new Map(), views: {}, books: null,
-                  daily: null, picked: null, loadedAt: {}, bar: "auto", theme: "auto",
+                  daily: null, picked: null, loadedAt: {}, bar: "auto", theme: "dark",
                   cache: { candles: new Map(), funding: new Map() } };
   const charts = {};
 
@@ -760,7 +781,7 @@ if (typeof document !== "undefined") (() => {
       const coins = [...s.perCoin.entries()].sort((a, c) => Math.abs(c[1].at(-1)) - Math.abs(a[1].at(-1)));
       coins.forEach(([coin, cum], i) => lines.push({
         name: coin, width: 1.4, values: toSeries(s.times, Array.from(cum)), visible: coinsVisible,
-        color: coin === "BTC" ? css("--leg1") : coin === "PAXG" ? css("--leg2") : COIN_COLORS[i % COIN_COLORS.length] }));
+        color: coin === "BTC" ? css("--leg1") : coin === "PAXG" ? css("--leg2") : coinColor(i) }));
       return lines;
     };
     drawChart("emissions", "$", bookLines(em, false), keepRange);
@@ -945,23 +966,19 @@ if (typeof document !== "undefined") (() => {
     state.views = {}; state.loadedAt = {}; show(state.tab); refresh(true);
   };
   function applyTheme() {
-    if (state.theme === "auto") document.documentElement.removeAttribute("data-theme");
-    else document.documentElement.setAttribute("data-theme", state.theme);
-    $("theme").textContent = THEMES[state.theme];
+    document.documentElement.setAttribute("data-theme", state.theme);
+    for (const b of $("themeSeg").querySelectorAll("button")) b.setAttribute("aria-pressed", String(b.dataset.themePick === state.theme));
     const meta = document.querySelector('meta[name="theme-color"]');
     if (meta) meta.setAttribute("content", css("--bg"));
     for (const c of Object.values(charts)) c.chart.applyOptions(chartTheme());
     if (state.tab !== "lob" && state.views[state.tab]) renderPnl(true);
     if (state.tab === "lob" && state.books) renderLob();
   }
-  $("theme").onclick = () => {
-    const order = Object.keys(THEMES);
-    state.theme = order[(order.indexOf(state.theme) + 1) % order.length];
-    store.set(THEME_KEY, state.theme); applyTheme();
+  for (const b of $("themeSeg").querySelectorAll("button")) b.onclick = () => {
+    state.theme = b.dataset.themePick; store.set(THEME_KEY, state.theme); applyTheme();
   };
   for (const btn of $("tabList").querySelectorAll("button")) btn.onclick = () => { show(btn.dataset.tab); refresh(); };
   for (const btn of document.querySelectorAll("[data-fit]")) btn.onclick = () => charts[btn.dataset.fit]?.chart.timeScale().fitContent();
-  matchMedia("(prefers-color-scheme: light)").addEventListener("change", () => { if (state.theme === "auto") applyTheme(); });
   document.addEventListener("visibilitychange", () => { if (!document.hidden) refresh(); });
   setInterval(() => { if (!document.hidden) refresh(); }, 15000);
 
