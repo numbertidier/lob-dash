@@ -1,0 +1,572 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>LOB</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="LOB">
+<meta name="theme-color" content="#10161f">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: one column, phone first. Summary tiles, then charts, then tables. Two tabs: Book, Order book. */
+:root {
+  --bg: #f3f5f8; --panel: #ffffff; --ink: #121a24; --ink2: #4a5666; --muted: #8a95a4; --line: #dfe4ea;
+  --accent: #c27a12; --up: #0f8a5f; --down: #c53a3a; --leg1: #2f6fd0; --leg2: #c27a12; --book: #121a24;
+  --bid: #0f8a5f; --ask: #c53a3a;
+  --sans: "IBM Plex Sans", -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #10161f; --panel: #18212d; --ink: #e8edf3; --ink2: #a9b4c2; --muted: #6f7c8d; --line: #263241;
+    --accent: #f0a83a; --up: #37c28d; --down: #f06a6a; --leg1: #6aa1f5; --leg2: #f0a83a; --book: #e8edf3;
+    --bid: #37c28d; --ask: #f06a6a; color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; }
+body {
+  background: var(--bg); color: var(--ink); font: 14px/1.45 var(--sans);
+  padding-top: env(safe-area-inset-top, 0px); padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+  -webkit-text-size-adjust: 100%;
+}
+.wrap { max-width: 920px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
+.wrap > * { min-width: 0; }
+.legs > * { min-width: 0; }
+header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-block: 14px 2px; }
+h1 { font-size: 20px; margin: 0; letter-spacing: .02em; font-weight: 600; }
+h1 span { color: var(--accent); }
+h2 { font-size: 12px; margin: 0 0 8px; text-transform: uppercase; letter-spacing: .08em; color: var(--ink2); font-weight: 600; }
+.stamp { font: 12px var(--mono); color: var(--muted); text-align: right; }
+button { font: inherit; color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 8px;
+  padding: 7px 12px; cursor: pointer; }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.tabs { display: grid; grid-template-columns: 1fr 1fr; background: var(--panel); border: 1px solid var(--line);
+  border-radius: 10px; padding: 3px; gap: 3px; }
+.tabs button { border: 0; border-radius: 7px; background: transparent; color: var(--ink2); font-weight: 500; }
+.tabs button[aria-selected="true"] { background: var(--ink); color: var(--bg); }
+main { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px; min-width: 0; }
+.tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+@media (min-width: 640px) { .tiles { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.tile { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px; min-width: 0; }
+.tile .k { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--ink2); }
+.tile .v { font: 500 22px/1.2 var(--mono); margin-top: 4px; font-variant-numeric: tabular-nums; }
+.tile .s { font: 12px var(--mono); color: var(--muted); margin-top: 2px; }
+.up { color: var(--up); } .down { color: var(--down); }
+.legs { display: grid; gap: 10px; }
+@media (min-width: 640px) { .legs { grid-template-columns: 1fr 1fr; } }
+.leg h3 { margin: 0 0 6px; font-size: 15px; display: flex; align-items: center; gap: 8px; }
+.dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.kv { display: grid; grid-template-columns: 1fr auto; gap: 3px 12px; font-size: 13px; }
+.kv dt { color: var(--ink2); } .kv dd { margin: 0; font: 13px var(--mono); text-align: right; font-variant-numeric: tabular-nums; }
+.scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+table { border-collapse: collapse; width: 100%; font-size: 13px; }
+th { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--ink2); font-weight: 500;
+  text-align: right; padding: 6px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; }
+td { padding: 6px 8px; border-bottom: 1px solid var(--line); text-align: right; font: 13px var(--mono);
+  font-variant-numeric: tabular-nums; white-space: nowrap; }
+tr:last-child td { border-bottom: 0; }
+tbody tr.pick { cursor: pointer; }
+tbody tr.pick:hover td, tbody tr.sel td { background: color-mix(in srgb, var(--accent) 10%, transparent); }
+.pill { font: 11px var(--sans); padding: 1px 7px; border-radius: 99px; border: 1px solid currentColor; }
+.chart { width: 100%; height: auto; display: block; touch-action: pan-y; }
+.chart text { fill: var(--muted); font: 11px var(--mono); }
+.legend { display: flex; flex-wrap: wrap; gap: 12px; font-size: 12px; color: var(--ink2); margin-top: 6px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { width: 14px; height: 2px; display: inline-block; }
+.readout { font: 12px var(--mono); color: var(--ink2); min-height: 18px; }
+.note { font-size: 12px; color: var(--muted); }
+.err { color: var(--down); font-size: 13px; }
+.setup { display: grid; gap: 10px; }
+.setup input { font: 14px var(--mono); padding: 10px; border-radius: 8px; border: 1px solid var(--line);
+  background: var(--bg); color: var(--ink); width: 100%; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+@media (prefers-reduced-motion: no-preference) { .spin { animation: spin 1s linear infinite; display: inline-block; } }
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>LOB <span>desk</span></h1>
+    <div class="row">
+      <div class="stamp" id="stamp">not loaded</div>
+      <button id="refresh" aria-label="Refresh now">↻</button>
+    </div>
+  </header>
+
+  <section class="panel setup" id="setup" hidden>
+    <h2>Set up</h2>
+    <label for="addr">Hyperliquid master address. Stored on this phone only.</label>
+    <input id="addr" placeholder="0x…" autocomplete="off" autocapitalize="off" spellcheck="false">
+    <div class="row"><button id="save">Save and load</button><span class="err" id="setupErr"></span></div>
+  </section>
+
+  <nav class="tabs" role="tablist" id="tabs" hidden>
+    <button role="tab" aria-selected="true" data-tab="book" id="tab-book">Book</button>
+    <button role="tab" aria-selected="false" data-tab="lob" id="tab-lob">Order book</button>
+  </nav>
+
+  <main id="view-book" hidden>
+    <div class="tiles" id="tiles"></div>
+    <section class="panel">
+      <h2>Cumulative P&amp;L, $</h2>
+      <div class="readout" id="pnlReadout"></div>
+      <svg class="chart" id="pnlChart" viewBox="0 0 600 220" role="img" aria-label="Cumulative P&L chart"></svg>
+      <div class="legend" id="pnlLegend"></div>
+    </section>
+    <section class="panel">
+      <h2>Daily return, 50/50 book</h2>
+      <div class="readout" id="dayReadout"></div>
+      <svg class="chart" id="dayChart" viewBox="0 0 600 160" role="img" aria-label="Daily return bars"></svg>
+    </section>
+    <div class="legs" id="legs"></div>
+    <section class="panel">
+      <h2>Daily table</h2>
+      <div class="scroll"><table id="dailyTable"></table></div>
+    </section>
+    <section class="panel">
+      <h2>Positions</h2>
+      <div class="scroll"><table id="posTable"></table></div>
+    </section>
+    <p class="note">Data: Hyperliquid public API, pulled by this phone on open and every 60 s. P&amp;L uses HL's P&amp;L history, so deposits and transfers are not counted as profit. Days are UTC; today is partial. Book = equal-weight mean of the sub-accounts' daily returns. Sharpe = mean / stdev of daily returns × √365.</p>
+    <p class="row"><button id="forget">Change address</button></p>
+  </main>
+
+  <main id="view-lob" hidden>
+    <div class="tiles" id="lobTiles"></div>
+    <section class="panel">
+      <h2>Depth for held names</h2>
+      <p class="note" style="margin:0 0 8px">Exit side: bids for longs, asks for shorts. "Size / depth" = our notional over exit-side depth within 50 bp of mid. Tap a row for its ladder.</p>
+      <div class="scroll"><table id="lobTable"></table></div>
+    </section>
+    <section class="panel">
+      <h2 id="ladderTitle">Ladder</h2>
+      <div class="readout" id="ladderReadout"></div>
+      <svg class="chart" id="ladderChart" viewBox="0 0 600 220" role="img" aria-label="Cumulative depth chart"></svg>
+      <div class="legend"><span><i style="background:var(--bid)"></i>Bids, cumulative $</span><span><i style="background:var(--ask)"></i>Asks, cumulative $</span><span><i style="background:var(--accent)"></i>Our size</span></div>
+    </section>
+  </main>
+  <p class="err" id="err"></p>
+</div>
+
+<script>
+"use strict";
+/* ---------- pure logic (also run by node tests) ---------- */
+const LOB = (() => {
+  const API = "https://api.hyperliquid.xyz/info";
+  const DAY_MS = 86400000;
+  const MIN_PRIOR_VALUE = 100;           // ignore days before an account was funded
+  const DEPTH_BANDS_BP = [10, 50, 100];
+
+  async function info(body) {
+    const res = await fetch(API, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    if (!res.ok) throw new Error(`Hyperliquid ${body.type} failed: HTTP ${res.status}`);
+    return res.json();
+  }
+
+  const isAddress = (text) => /^0x[0-9a-fA-F]{40}$/.test(text.trim());
+  const dayKey = (ms) => new Date(ms).toISOString().slice(0, 10);
+
+  /** End-of-UTC-day pnl and account value, forward filled over every calendar day. */
+  function endOfDay(allTime) {
+    const points = new Map();
+    for (const [t, v] of allTime.pnlHistory) points.set(t, { ...(points.get(t) || {}), pnl: +v });
+    for (const [t, v] of allTime.accountValueHistory) points.set(t, { ...(points.get(t) || {}), av: +v });
+    const times = [...points.keys()].sort((a, b) => a - b);
+    let pnl = NaN, av = NaN;
+    const last = new Map();
+    for (const t of times) {
+      const p = points.get(t);
+      if (p.pnl !== undefined) pnl = p.pnl;
+      if (p.av !== undefined) av = p.av;
+      last.set(dayKey(t), { pnl, av });
+    }
+    if (!last.size) return [];
+    const keys = [...last.keys()];
+    const out = [];
+    let prev = null;
+    for (let t = Date.parse(keys[0]); t <= Date.parse(keys[keys.length - 1]); t += DAY_MS) {
+      const k = dayKey(t);
+      prev = last.get(k) || prev;
+      out.push({ date: k, ...prev });
+    }
+    return out;
+  }
+
+  /** Daily P&L and return; return = day P&L / prior day's account value. */
+  function dailyReturns(allTime) {
+    const eod = endOfDay(allTime);
+    const rows = [];
+    for (let i = 1; i < eod.length; i++) {
+      const prior = eod[i - 1].av;
+      if (!(prior > MIN_PRIOR_VALUE)) continue;
+      const pnl = eod[i].pnl - eod[i - 1].pnl;
+      rows.push({ date: eod[i].date, pnl, ret: pnl / prior, av: eod[i].av });
+    }
+    return rows;
+  }
+
+  /** Equal-weight book over the days every leg has. */
+  function combine(legs) {
+    const maps = legs.map((leg) => new Map(leg.map((r) => [r.date, r])));
+    const dates = [...maps[0].keys()].filter((d) => maps.every((m) => m.has(d))).sort();
+    return dates.map((date) => {
+      const rows = maps.map((m) => m.get(date));
+      return { date, pnl: rows.reduce((s, r) => s + r.pnl, 0), ret: rows.reduce((s, r) => s + r.ret, 0) / rows.length };
+    });
+  }
+
+  function stats(rows) {
+    const rets = rows.map((r) => r.ret);
+    const n = rets.length;
+    const mean = n ? rets.reduce((a, b) => a + b, 0) / n : NaN;
+    const sd = n > 1 ? Math.sqrt(rets.reduce((s, x) => s + (x - mean) ** 2, 0) / (n - 1)) : NaN;
+    let nav = 1, peak = 1, maxDd = 0;
+    for (const r of rets) { nav *= 1 + r; peak = Math.max(peak, nav); maxDd = Math.min(maxDd, nav / peak - 1); }
+    const red = rows.filter((r) => r.ret < 0);
+    let streak = 0;
+    for (let i = n - 1; i >= 0 && rets[i] >= 0; i--) streak++;
+    return {
+      n, cum: nav - 1, pnl: rows.reduce((s, r) => s + r.pnl, 0), sharpe: sd > 0 ? mean / sd * Math.sqrt(365) : NaN,
+      vol: sd * Math.sqrt(365), maxDd, red: red.length, lastRed: red.length ? red[red.length - 1] : null, greenStreak: streak,
+      worst: rows.reduce((w, r) => (!w || r.ret < w.ret ? r : w), null), first: rows[0]?.date, last: rows[n - 1]?.date,
+    };
+  }
+
+  function positions(state) {
+    const value = +state.marginSummary.accountValue;
+    return state.assetPositions.map(({ position: p }) => {
+      const size = +p.szi;
+      const notional = Math.sign(size) * +p.positionValue;
+      return { coin: p.coin, size, notional, weight: value ? notional / value : NaN, upnl: +p.unrealizedPnl,
+               funding: -(+p.cumFunding.sinceOpen), entry: +p.entryPx };
+    }).sort((a, b) => b.weight - a.weight);
+  }
+
+  /** Active sub-accounts with daily history and positions. */
+  async function loadBook(master) {
+    const subs = (await info({ type: "subAccounts", user: master })) || [];
+    const active = subs.filter((s) => +s.clearinghouseState.marginSummary.accountValue > 1);
+    if (!active.length) throw new Error("No funded sub-accounts found for this address.");
+    const legs = await Promise.all(active.map(async (s) => {
+      const port = Object.fromEntries(await info({ type: "portfolio", user: s.subAccountUser }));
+      const st = s.clearinghouseState;
+      return { name: s.name, value: +st.marginSummary.accountValue, gross: +st.marginSummary.totalNtlPos,
+               daily: dailyReturns(port.allTime), positions: positions(st) };
+    }));
+    legs.sort((a, b) => a.name.localeCompare(b.name));
+    return { legs, book: combine(legs.map((l) => l.daily)) };
+  }
+
+  /** Spread and depth within bands, from an l2Book snapshot. */
+  function depth(l2, notional) {
+    const [bids, asks] = l2.levels.map((side) => side.map((l) => ({ px: +l.px, sz: +l.sz })));
+    if (!bids.length || !asks.length) return null;
+    const mid = (bids[0].px + asks[0].px) / 2;
+    const within = (side, bp) => side.filter((l) => Math.abs(l.px / mid - 1) * 1e4 <= bp).reduce((s, l) => s + l.px * l.sz, 0);
+    const bands = Object.fromEntries(DEPTH_BANDS_BP.map((bp) => [bp, { bid: within(bids, bp), ask: within(asks, bp) }]));
+    const exit = notional >= 0 ? "bid" : "ask";
+    return { mid, spreadBp: (asks[0].px - bids[0].px) / mid * 1e4, bands, exit,
+             ratio50: Math.abs(notional) / (bands[50][exit] || NaN), bids, asks };
+  }
+
+  async function loadBooks(coins, notionals, limit = 5) {
+    const out = [];
+    for (let i = 0; i < coins.length; i += limit) {
+      const chunk = coins.slice(i, i + limit);
+      const got = await Promise.all(chunk.map(async (coin) => {
+        const l2 = await info({ type: "l2Book", coin });
+        return { coin, notional: notionals[coin] || 0, ...depth(l2, notionals[coin] || 0) };
+      }));
+      out.push(...got);
+    }
+    return out;
+  }
+
+  return { info, isAddress, endOfDay, dailyReturns, combine, stats, positions, loadBook, depth, loadBooks };
+})();
+if (typeof module !== "undefined") module.exports = LOB;
+
+/* ---------- UI ---------- */
+if (typeof document !== "undefined") (() => {
+  const $ = (id) => document.getElementById(id);
+  const KEY = "lob.master.v1";
+  const LEG_COLORS = ["var(--leg1)", "var(--leg2)", "#8a6fd0", "#2aa3a3"];
+  const REFRESH_MS = 60000;
+  let state = { master: null, book: null, books: null, picked: null, tab: "book", busy: false };
+
+  const store = {
+    get() { try { return localStorage.getItem(KEY); } catch { return null; } },
+    set(v) { try { localStorage.setItem(KEY, v); } catch { /* private mode: keep in memory only */ } },
+    clear() { try { localStorage.removeItem(KEY); } catch { /* ignore */ } },
+  };
+
+  const usd = (x, dp = 0) => (x < 0 ? "−$" : "$") + Math.abs(x).toLocaleString("en-US", { minimumFractionDigits: dp, maximumFractionDigits: dp });
+  const sUsd = (x, dp = 0) => (x > 0 ? "+" : "") + usd(x, dp);
+  const pct = (x, dp = 2) => Number.isFinite(x) ? (x > 0 ? "+" : x < 0 ? "−" : "") + Math.abs(x * 100).toFixed(dp) + "%" : "–";
+  const num = (x, dp = 2) => Number.isFinite(x) ? x.toFixed(dp) : "–";
+  const cls = (x) => (x > 0 ? "up" : x < 0 ? "down" : "");
+  const short = (d) => new Date(d + "T00:00:00Z").toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" });
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const svgEl = (tag, attrs, text) => {
+    const el = document.createElementNS("http://www.w3.org/2000/svg", tag);
+    for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+    if (text !== undefined) el.textContent = text;
+    return el;
+  };
+
+  /* Draw at the on-screen width so labels keep their real size on a phone. */
+  const fit = (svg, h) => { const w = Math.max(300, Math.round(svg.getBoundingClientRect().width || 600)); svg.setAttribute("viewBox", `0 0 ${w} ${h}`); return w; };
+
+  function niceTicks(lo, hi, count = 4) {
+    const span = hi - lo || Math.abs(hi) || 1;
+    const raw = span / count, mag = 10 ** Math.floor(Math.log10(raw));
+    const step = [1, 2, 2.5, 5, 10].map((m) => m * mag).find((s) => s >= raw);
+    const ticks = [];
+    for (let v = Math.ceil(lo / step) * step; v <= hi + 1e-9; v += step) ticks.push(+v.toFixed(10));
+    return ticks;
+  }
+
+  /* Line chart with one y axis, tap/hover readout. series: [{name,color,values:[{x,y}],width}] */
+  function lineChart(svg, readout, series, fmt) {
+    svg.replaceChildren();
+    const H = 220, W = fit(svg, H), L = 52, R = 12, T = 10, B = 24;
+    const xs = series[0].values.map((p) => p.x);
+    if (xs.length < 2) { svg.append(svgEl("text", { x: W / 2, y: H / 2, "text-anchor": "middle" }, "Need two days of history")); return; }
+    const ys = series.flatMap((s) => s.values.map((p) => p.y)).concat(0);
+    const ticks = niceTicks(Math.min(...ys), Math.max(...ys));
+    const lo = Math.min(ticks[0], ...ys), hi = Math.max(ticks[ticks.length - 1], ...ys);
+    const X = (i) => L + (W - L - R) * i / (xs.length - 1);
+    const Y = (v) => T + (H - T - B) * (1 - (v - lo) / (hi - lo || 1));
+    for (const t of ticks) {
+      svg.append(svgEl("line", { x1: L, x2: W - R, y1: Y(t), y2: Y(t), stroke: "var(--line)", "stroke-width": t === 0 ? 1.2 : 1 }));
+      svg.append(svgEl("text", { x: L - 6, y: Y(t) + 3, "text-anchor": "end" }, fmt(t)));
+    }
+    const step = Math.max(1, Math.ceil(xs.length / 6));
+    xs.forEach((x, i) => { if (i % step === 0 || i === xs.length - 1) svg.append(svgEl("text", { x: X(i), y: H - 6, "text-anchor": i === 0 ? "start" : i === xs.length - 1 ? "end" : "middle" }, short(x))); });
+    for (const s of series) {
+      const d = s.values.map((p, i) => `${i ? "L" : "M"}${X(i).toFixed(1)},${Y(p.y).toFixed(1)}`).join("");
+      svg.append(svgEl("path", { d, fill: "none", stroke: s.color, "stroke-width": s.width || 2, "stroke-linejoin": "round", "stroke-linecap": "round" }));
+      const end = s.values[s.values.length - 1];
+      svg.append(svgEl("circle", { cx: X(xs.length - 1), cy: Y(end.y), r: 3.5, fill: s.color, stroke: "var(--panel)", "stroke-width": 2 }));
+    }
+    const cross = svgEl("line", { y1: T, y2: H - B, stroke: "var(--muted)", "stroke-dasharray": "3 3", visibility: "hidden" });
+    svg.append(cross);
+    const show = (i) => {
+      cross.setAttribute("x1", X(i)); cross.setAttribute("x2", X(i)); cross.setAttribute("visibility", "visible");
+      readout.textContent = short(xs[i]) + "  " + series.map((s) => `${s.name} ${fmt(s.values[i].y)}`).join("  ");
+    };
+    const pick = (ev) => {
+      const box = svg.getBoundingClientRect();
+      const px = ((ev.touches ? ev.touches[0].clientX : ev.clientX) - box.left) / box.width * W;
+      show(Math.max(0, Math.min(xs.length - 1, Math.round((px - L) / (W - L - R) * (xs.length - 1)))));
+    };
+    svg.onmousemove = pick; svg.ontouchstart = pick; svg.ontouchmove = pick;
+    show(xs.length - 1);
+  }
+
+  function barChart(svg, readout, rows) {
+    svg.replaceChildren();
+    const H = 160, W = fit(svg, H), L = 52, R = 12, T = 10, B = 24;
+    if (!rows.length) return;
+    const vals = rows.map((r) => r.ret * 100);
+    const ticks = niceTicks(Math.min(0, ...vals), Math.max(0, ...vals), 3);
+    const lo = Math.min(ticks[0], ...vals), hi = Math.max(ticks[ticks.length - 1], ...vals);
+    const Y = (v) => T + (H - T - B) * (1 - (v - lo) / (hi - lo || 1));
+    const slot = (W - L - R) / rows.length, bw = Math.max(2, Math.min(28, slot - 2));
+    for (const t of ticks) {
+      svg.append(svgEl("line", { x1: L, x2: W - R, y1: Y(t), y2: Y(t), stroke: "var(--line)" }));
+      svg.append(svgEl("text", { x: L - 6, y: Y(t) + 3, "text-anchor": "end" }, t.toFixed(1) + "%"));
+    }
+    rows.forEach((r, i) => {
+      const v = vals[i], x = L + slot * i + (slot - bw) / 2;
+      const rect = svgEl("rect", { x, y: Math.min(Y(v), Y(0)), width: bw, height: Math.max(1, Math.abs(Y(v) - Y(0))), rx: 2,
+                                   fill: v >= 0 ? "var(--up)" : "var(--down)" });
+      const hit = svgEl("rect", { x: L + slot * i, y: T, width: slot, height: H - T - B, fill: "transparent" });
+      const show = () => { readout.textContent = `${short(r.date)}  ${pct(r.ret)}  ${sUsd(r.pnl)}`; };
+      hit.addEventListener("mouseenter", show); hit.addEventListener("touchstart", show, { passive: true });
+      svg.append(rect, hit);
+    });
+    const step = Math.max(1, Math.ceil(rows.length / 6));
+    rows.forEach((r, i) => { if (i % step === 0 || i === rows.length - 1) svg.append(svgEl("text", { x: L + slot * (i + 0.5), y: H - 6, "text-anchor": "middle" }, short(r.date))); });
+    const lastRow = rows[rows.length - 1];
+    readout.textContent = `${short(lastRow.date)}  ${pct(lastRow.ret)}  ${sUsd(lastRow.pnl)}  (today, partial)`;
+  }
+
+  function tile(k, v, s, c = "") { return `<div class="tile"><div class="k">${k}</div><div class="v ${c}">${v}</div><div class="s">${s}</div></div>`; }
+
+  function renderBook() {
+    const { legs, book } = state.book;
+    const st = LOB.stats(book);
+    const today = book[book.length - 1];
+    const value = legs.reduce((s, l) => s + l.value, 0), gross = legs.reduce((s, l) => s + l.gross, 0);
+    $("tiles").innerHTML =
+      tile("Today", today ? pct(today.ret) : "–", today ? `${sUsd(today.pnl)} so far` : "", cls(today?.ret)) +
+      tile("Since start", pct(st.cum), `${sUsd(st.pnl)} · ${st.n} days`, cls(st.cum)) +
+      tile("Sharpe", num(st.sharpe), `${st.n} days · vol ${pct(st.vol, 1).replace("+", "")}`) +
+      tile("Max drawdown", pct(st.maxDd), `worst day ${st.worst ? pct(st.worst.ret) : "–"}`, st.maxDd < 0 ? "down" : "") +
+      tile("Red days", `${st.red}/${st.n}`, st.lastRed ? `last ${short(st.lastRed.date)} ${pct(st.lastRed.ret)}` : "none yet") +
+      tile("Green streak", `${st.greenStreak}`, "days in a row") +
+      tile("Equity", usd(value), `${legs.length} sub-accounts`) +
+      tile("Gross", usd(gross), `${num(gross / value)}× equity`);
+
+    const cumulative = (rows) => { let c = 0; return rows.map((r) => ({ x: r.date, y: (c += r.pnl) })); };
+    const dates = book.map((r) => r.date);
+    const series = legs.map((l, i) => {
+      const map = new Map(cumulative(l.daily.filter((r) => dates.includes(r.date))).map((p) => [p.x, p.y]));
+      return { name: l.name, color: LEG_COLORS[i % LEG_COLORS.length], values: dates.map((d) => ({ x: d, y: map.get(d) })), width: 1.8 };
+    });
+    series.push({ name: "book", color: "var(--book)", values: cumulative(book), width: 2.6 });
+    lineChart($("pnlChart"), $("pnlReadout"), series, (v) => sUsd(v));
+    $("pnlLegend").innerHTML = series.map((s) => `<span><i style="background:${s.color}"></i>${esc(s.name)}</span>`).join("");
+    barChart($("dayChart"), $("dayReadout"), book);
+
+    $("legs").innerHTML = legs.map((l, i) => {
+      const s = LOB.stats(l.daily.filter((r) => dates.includes(r.date)));
+      const t = l.daily[l.daily.length - 1];
+      return `<section class="panel leg"><h3><span class="dot" style="background:${LEG_COLORS[i % LEG_COLORS.length]}"></span>${esc(l.name)}</h3>
+        <dl class="kv"><dt>Equity</dt><dd>${usd(l.value)}</dd><dt>Gross</dt><dd>${usd(l.gross)} · ${num(l.gross / l.value)}×</dd>
+        <dt>Positions</dt><dd>${l.positions.length}</dd><dt>Today</dt><dd class="${cls(t?.ret)}">${pct(t?.ret)} · ${sUsd(t?.pnl ?? 0)}</dd>
+        <dt>Since start</dt><dd class="${cls(s.cum)}">${pct(s.cum)} · ${sUsd(s.pnl)}</dd><dt>Sharpe</dt><dd>${num(s.sharpe)}</dd>
+        <dt>Max DD</dt><dd>${pct(s.maxDd)}</dd><dt>Red days</dt><dd>${s.red}/${s.n}</dd></dl></section>`;
+    }).join("");
+
+    const legMaps = legs.map((l) => new Map(l.daily.map((r) => [r.date, r])));
+    $("dailyTable").innerHTML = `<thead><tr><th>Day</th>${legs.map((l) => `<th>${esc(l.name)}</th>`).join("")}<th>Book</th><th>Book $</th></tr></thead><tbody>` +
+      [...book].reverse().map((r) => `<tr><td>${short(r.date)}</td>${legMaps.map((m) => `<td class="${cls(m.get(r.date)?.ret)}">${pct(m.get(r.date)?.ret)}</td>`).join("")}
+        <td class="${cls(r.ret)}">${pct(r.ret)}</td><td class="${cls(r.pnl)}">${sUsd(r.pnl)}</td></tr>`).join("") + "</tbody>";
+
+    const rows = legs.flatMap((l) => l.positions.map((p) => ({ ...p, leg: l.name })));
+    $("posTable").innerHTML = `<thead><tr><th>Coin</th><th>Book</th><th>Side</th><th>Notional</th><th>Weight</th><th>uPnL</th><th>Funding</th></tr></thead><tbody>` +
+      rows.map((p) => `<tr><td>${esc(p.coin)}</td><td style="font-family:var(--sans);color:var(--ink2)">${esc(p.leg)}</td>
+        <td><span class="pill ${p.size > 0 ? "up" : "down"}">${p.size > 0 ? "long" : "short"}</span></td>
+        <td>${usd(Math.abs(p.notional))}</td><td>${pct(p.weight, 1)}</td><td class="${cls(p.upnl)}">${sUsd(p.upnl, 2)}</td>
+        <td class="${cls(p.funding)}">${sUsd(p.funding, 2)}</td></tr>`).join("") + "</tbody>";
+  }
+
+  function renderLob() {
+    const books = state.books.filter((b) => Number.isFinite(b.mid));
+    if (!books.length) return;
+    const sorted = [...books].sort((a, b) => b.ratio50 - a.ratio50);
+    const worst = sorted[0];
+    const medSpread = [...books].map((b) => b.spreadBp).sort((a, b) => a - b)[Math.floor(books.length / 2)];
+    const thin = books.filter((b) => b.ratio50 > 0.25).length;
+    $("lobTiles").innerHTML =
+      tile("Names", `${books.length}`, "held now") +
+      tile("Median spread", `${num(medSpread, 1)} bp`, "top of book") +
+      tile("Tightest exit", esc(worst.coin), `size ${num(worst.ratio50 * 100, 0)}% of 50bp depth`, worst.ratio50 > 0.25 ? "down" : "") +
+      tile("Over 25%", `${thin}`, "names where size > 25% of 50bp depth", thin ? "down" : "");
+    $("lobTable").innerHTML = `<thead><tr><th>Coin</th><th>Ours</th><th>Spread</th><th>±10bp</th><th>±50bp exit</th><th>±100bp exit</th><th>Size / depth</th></tr></thead><tbody>` +
+      sorted.map((b) => `<tr class="pick${state.picked === b.coin ? " sel" : ""}" data-coin="${esc(b.coin)}"><td>${esc(b.coin)}</td>
+        <td class="${cls(b.notional)}">${sUsd(b.notional)}</td><td>${num(b.spreadBp, 1)} bp</td>
+        <td>${usd(Math.min(b.bands[10].bid, b.bands[10].ask))}</td><td>${usd(b.bands[50][b.exit])}</td><td>${usd(b.bands[100][b.exit])}</td>
+        <td class="${b.ratio50 > 0.25 ? "down" : ""}">${num(b.ratio50 * 100, 1)}%</td></tr>`).join("") + "</tbody>";
+    for (const tr of $("lobTable").querySelectorAll("tr.pick")) tr.onclick = () => { state.picked = tr.dataset.coin; renderLob(); };
+    renderLadder(books.find((b) => b.coin === state.picked) || worst);
+  }
+
+  function renderLadder(b) {
+    const svg = $("ladderChart");
+    svg.replaceChildren();
+    $("ladderTitle").textContent = `Ladder · ${b.coin}`;
+    const H = 220, W = fit(svg, H), L = 56, R = 12, T = 10, B = 24, BAND = 100;
+    const X = (bp) => L + (W - L - R) * (bp + BAND) / (2 * BAND);
+    const cum = (side, dir) => {
+      let c = 0; const pts = [];
+      for (const l of side) { const bp = (l.px / b.mid - 1) * 1e4; if (Math.abs(bp) > BAND) break; c += l.px * l.sz; pts.push({ bp, c }); }
+      if (pts.length) pts.push({ bp: dir * BAND, c });
+      return pts;
+    };
+    const bids = cum(b.bids, -1), asks = cum(b.asks, 1);
+    const top = Math.max(1, ...bids.map((p) => p.c), ...asks.map((p) => p.c), Math.abs(b.notional));
+    const ticks = niceTicks(0, top, 4);
+    const ymax = Math.max(top, ticks[ticks.length - 1]);
+    const Y = (v) => T + (H - T - B) * (1 - v / ymax);
+    for (const t of ticks) {
+      svg.append(svgEl("line", { x1: L, x2: W - R, y1: Y(t), y2: Y(t), stroke: "var(--line)" }));
+      svg.append(svgEl("text", { x: L - 6, y: Y(t) + 3, "text-anchor": "end" }, t >= 1000 ? `$${(t / 1000).toFixed(t >= 1e5 ? 0 : 1)}k` : `$${t}`));
+    }
+    for (const bp of [-100, -50, 0, 50, 100]) svg.append(svgEl("text", { x: X(bp), y: H - 6, "text-anchor": "middle" }, `${bp > 0 ? "+" : ""}${bp}bp`));
+    const step = (pts, color) => {
+      if (!pts.length) return;
+      let d = `M${X(0).toFixed(1)},${Y(0).toFixed(1)}`, prevC = 0;
+      for (const p of pts) { d += `L${X(p.bp).toFixed(1)},${Y(prevC).toFixed(1)}L${X(p.bp).toFixed(1)},${Y(p.c).toFixed(1)}`; prevC = p.c; }
+      const area = d + `L${X(pts[pts.length - 1].bp).toFixed(1)},${Y(0).toFixed(1)}Z`;
+      svg.append(svgEl("path", { d: area, fill: color, "fill-opacity": 0.14, stroke: "none" }));
+      svg.append(svgEl("path", { d, fill: "none", stroke: color, "stroke-width": 2 }));
+    };
+    step(bids, "var(--bid)"); step(asks, "var(--ask)");
+    if (b.notional) {
+      svg.append(svgEl("line", { x1: L, x2: W - R, y1: Y(Math.abs(b.notional)), y2: Y(Math.abs(b.notional)), stroke: "var(--accent)", "stroke-width": 1.6, "stroke-dasharray": "5 4" }));
+    }
+    $("ladderReadout").textContent = `mid ${b.mid.toPrecision(6)}  spread ${num(b.spreadBp, 1)}bp  ours ${sUsd(b.notional)}  exit via ${b.exit}s`;
+  }
+
+  function setTab(tab) {
+    state.tab = tab;
+    for (const btn of $("tabs").querySelectorAll("button")) btn.setAttribute("aria-selected", String(btn.dataset.tab === tab));
+    $("view-book").hidden = tab !== "book" || !state.book;
+    $("view-lob").hidden = tab !== "lob" || !state.books;
+    if (tab === "book" && state.book) renderBook();       // drawn once visible, so charts get their real width
+    if (tab === "lob" && state.books) renderLob();
+  }
+
+  async function refresh() {
+    if (!state.master || state.busy) return;
+    state.busy = true;
+    $("refresh").innerHTML = '<span class="spin">↻</span>';
+    $("err").textContent = "";
+    try {
+      state.book = await LOB.loadBook(state.master);
+      $("tabs").hidden = false;
+      setTab(state.tab);
+      const notionals = {};
+      for (const l of state.book.legs) for (const p of l.positions) notionals[p.coin] = (notionals[p.coin] || 0) + p.notional;
+      state.books = await LOB.loadBooks(Object.keys(notionals).sort(), notionals);
+      const now = new Date();
+      $("stamp").textContent = `${now.toISOString().slice(11, 16)} UTC`;
+      $("tabs").hidden = false;
+      setTab(state.tab);
+    } catch (e) {
+      $("err").textContent = `${e.message} Pull again with ↻.`;
+    } finally {
+      state.busy = false;
+      $("refresh").textContent = "↻";
+    }
+  }
+
+  function showSetup(message = "") {
+    $("setup").hidden = false; $("tabs").hidden = true; $("view-book").hidden = true; $("view-lob").hidden = true;
+    $("setupErr").textContent = message;
+  }
+
+  $("save").onclick = () => {
+    const v = $("addr").value.trim();
+    if (!LOB.isAddress(v)) { $("setupErr").textContent = "That is not a 0x address with 40 hex characters."; return; }
+    store.set(v); state.master = v; $("setup").hidden = true; refresh();
+  };
+  $("forget").onclick = () => { store.clear(); state = { ...state, master: null, book: null, books: null }; $("addr").value = ""; showSetup(); };
+  $("refresh").onclick = refresh;
+  for (const btn of $("tabs").querySelectorAll("button")) btn.onclick = () => setTab(btn.dataset.tab);
+  let resizeTimer;
+  window.addEventListener("resize", () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => setTab(state.tab), 200); });
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) refresh(); });
+  setInterval(() => { if (!document.hidden) refresh(); }, REFRESH_MS);
+
+  const saved = store.get();
+  if (saved && LOB.isAddress(saved)) { state.master = saved; refresh(); } else showSetup();
+})();
+</script>
+</body>
+</html>
