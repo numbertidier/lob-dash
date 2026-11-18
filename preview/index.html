@@ -1,0 +1,1412 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>LOB</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="LOB">
+<meta name="theme-color" content="#050607">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="flow.css">
+<script src="https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
+<style>
+/* Layout: terminal desk look after BOT.DASH. One column on phone. Strips for section titles, mono throughout. */
+:root {
+  --bg: #050607; --panel: #0b0d10; --strip: #15181d; --ink: #e6e8eb; --ink2: #a3aab3; --muted: #6b7480; --line: #1f242b;
+  --accent: #f5a524; --num: #5aa2ff; --up: #3ccf8e; --down: #ff5c5c; --book: #f2f4f6; --leg1: #5aa2ff; --leg2: #f5a524;
+  --fund: #b48cff; --bid: #3ccf8e; --ask: #ff5c5c; --on-accent: #050607;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg: #f4f4f1; --panel: #ffffff; --strip: #ecebe6; --ink: #121417; --ink2: #3d4450; --muted: #7b828c; --line: #d9dad4;
+    --accent: #b35c00; --num: #1f5fd6; --up: #0b8a55; --down: #c62f2f; --book: #121417; --leg1: #1f5fd6; --leg2: #b35c00;
+    --fund: #7a4fd0; --bid: #0b8a55; --ask: #c62f2f; --on-accent: #ffffff; color-scheme: light;
+  }
+}
+:root[data-theme="light"] {
+  --bg: #f4f4f1; --panel: #ffffff; --strip: #ecebe6; --ink: #121417; --ink2: #3d4450; --muted: #7b828c; --line: #d9dad4;
+  --accent: #b35c00; --num: #1f5fd6; --up: #0b8a55; --down: #c62f2f; --book: #121417; --leg1: #1f5fd6; --leg2: #b35c00;
+  --fund: #7a4fd0; --bid: #0b8a55; --ask: #c62f2f; --on-accent: #ffffff; color-scheme: light;
+}
+/* Read: pure greyscale for long reading. Gains and losses are read from their sign. */
+:root[data-theme="read"] {
+  --bg: #ececec; --panel: #f7f7f7; --strip: #e2e2e2; --ink: #161616; --ink2: #3a3a3a; --muted: #6e6e6e; --line: #cfcfcf;
+  --accent: #222222; --num: #000000; --up: #161616; --down: #161616; --book: #000000; --leg1: #4a4a4a; --leg2: #8a8a8a;
+  --fund: #9a9a9a; --bid: #3a3a3a; --ask: #9a9a9a; --on-accent: #f7f7f7; color-scheme: light;
+}
+/* The filter sits on the P&L views only: a filter on body breaks position: fixed in the Flow tab (dock, sheets). */
+:root[data-theme="read"] .wrap > :not(#view-flow) { filter: grayscale(1); }
+:root[data-theme="read"] .down { font-weight: 600; }
+/* Warm: blue-light free. Amber, orange and red on black only. */
+:root[data-theme="warm"] {
+  --bg: #070403; --panel: #0e0805; --strip: #1a0f08; --ink: #ffb870; --ink2: #d98f4e; --muted: #8a5a32; --line: #2a1a0e;
+  --accent: #ff9a2e; --num: #ffc46b; --up: #ffd27a; --down: #ff4a2a; --book: #ffd9a6; --leg1: #ff7a3d; --leg2: #ffc46b;
+  --fund: #c2703a; --bid: #ffd27a; --ask: #ff4a2a; --on-accent: #070403; color-scheme: dark;
+}
+/* Mono: pure black, white and greys only (shared "mono" tokens). Losses are grey and italic, and keep their minus sign. */
+:root[data-theme="mono"] {
+  --bg: #000000; --panel: #000000; --strip: #161616; --ink: #ffffff; --ink2: #d4d4d4; --muted: #9a9a9a; --line: #3a3a3a;
+  --accent: #ffffff; --num: #ffffff; --up: #ffffff; --down: #8f8f8f; --book: #ffffff; --leg1: #bdbdbd; --leg2: #8a8a8a;
+  --fund: #a6a6a6; --bid: #ffffff; --ask: #8f8f8f; --on-accent: #000000; color-scheme: dark;
+}
+:root[data-theme="mono"] .down { font-style: italic; }
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; }
+body {
+  background: var(--bg); color: var(--ink); font: 13px/1.45 var(--mono);
+  padding-top: env(safe-area-inset-top, 0px); padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+  -webkit-text-size-adjust: 100%; font-variant-numeric: tabular-nums;
+}
+.wrap { max-width: 1100px; margin: 0 auto; padding-left: max(12px, env(safe-area-inset-left, 0px));
+  padding-right: max(12px, env(safe-area-inset-right, 0px)); display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+.wrap > *, main > * { min-width: 0; }
+main { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 10px; padding-block: 10px 0;
+  border-bottom: 1px solid var(--line); padding-bottom: 8px; }
+h1 { font-size: 15px; margin: 0; letter-spacing: .08em; font-weight: 600; color: var(--accent); }
+h1 span { color: var(--ink2); font-weight: 400; }
+.live { font-size: 11px; color: var(--on-accent); background: var(--up); padding: 1px 6px; border-radius: 2px; margin-left: 8px; letter-spacing: .06em; }
+h2 { font-size: 11px; margin: -10px -10px 10px; padding: 6px 10px; text-transform: uppercase; letter-spacing: .08em;
+  color: var(--accent); font-weight: 600; background: var(--strip); border-bottom: 1px solid var(--line);
+  display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.stamp { font-size: 11px; color: var(--muted); text-align: right; }
+button { font: inherit; color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 2px;
+  padding: 5px 10px; cursor: pointer; text-transform: uppercase; letter-spacing: .06em; font-size: 11px; }
+button.small { font-size: 10px; padding: 2px 8px; color: var(--ink2); }
+/* the way into the Desk look from an older look: drawn small so nothing else moves, but with a thumb-sized hit area */
+button.small[data-theme-pick="terminal"] { position: relative; }
+button.small[data-theme-pick="terminal"]::after { content: ""; position: absolute; inset: -12px -4px; }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.seg { display: flex; flex-wrap: wrap; gap: 0; }
+.seg button { border-radius: 0; margin-left: -1px; color: var(--accent); background: transparent; border-color: var(--line); font-weight: 600; }
+.seg button:first-child { margin-left: 0; }
+.seg button[aria-selected="true"], .seg button[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+.seg button:disabled { color: var(--muted); cursor: default; }
+.controls { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; justify-content: space-between; }
+.controls .lbl { font-size: 10px; color: var(--muted); letter-spacing: .08em; margin-right: 6px; }
+.window { font-size: 11px; color: var(--muted); border-bottom: 1px solid var(--line); padding-bottom: 6px; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 2px; padding: 10px; min-width: 0; overflow: hidden; }
+.tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+@media (min-width: 700px) { .tiles { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.tile { background: var(--panel); border: 1px solid var(--line); border-radius: 2px; padding: 10px; min-width: 0; }
+.tile .k { font-size: 10px; text-transform: uppercase; letter-spacing: .08em; color: var(--accent); font-weight: 600; }
+.tile .v { font: 500 20px/1.2 var(--mono); margin-top: 4px; color: var(--num); }
+.tile .s { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.up { color: var(--up); } .down { color: var(--down) !important; }
+.books { display: grid; gap: 8px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 700px) { .books { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.bk h3 { margin: 0; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--accent); font-weight: 600; }
+.bk .big { font: 500 22px/1.2 var(--mono); margin: 4px 0 8px; color: var(--num); }
+.bk .big small { font-size: 12px; margin-left: 8px; }
+.kv { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; font-size: 12px; margin: 0; }
+.kv dt { color: var(--accent); text-transform: uppercase; font-size: 11px; letter-spacing: .04em; }
+.kv dd { margin: 0; text-align: right; color: var(--accent); }
+.kv dd.up, .kv dd.down { }
+.foot { font-size: 11px; color: var(--muted); margin-top: 8px; }
+.scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+table { border-collapse: collapse; width: 100%; font-size: 12px; }
+th { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--accent); font-weight: 600;
+  text-align: right; padding: 5px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; }
+td { padding: 5px 8px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; }
+tr:last-child td { border-bottom: 0; }
+tbody tr.pick { cursor: pointer; }
+tbody tr.pick:hover td, tbody tr.sel td { background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.pill { font-size: 10px; padding: 0 6px; border: 1px solid currentColor; text-transform: uppercase; letter-spacing: .04em; }
+.lw { width: 100%; height: 260px; }
+.lw.tall { height: 300px; }
+@media (min-width: 700px) { .lw { height: 320px; } .lw.tall { height: 360px; } }
+.chart { width: 100%; height: auto; display: block; touch-action: pan-y; }
+.chart text { fill: var(--muted); font: 11px var(--mono); }
+.toggles { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 11px; color: var(--ink2); margin-top: 8px; }
+.toggles label { display: inline-flex; align-items: center; gap: 5px; cursor: pointer; user-select: none; }
+.toggles input { margin: 0; accent-color: var(--accent); }
+.toggles input:not(:checked) + i + span { text-decoration: line-through; color: var(--muted); }
+.toggles i { width: 14px; height: 0; border-top: 2px solid; display: inline-block; }
+.toggles i.dash { border-top-style: dashed; }
+.legend { display: flex; flex-wrap: wrap; gap: 12px; font-size: 11px; color: var(--ink2); margin-top: 6px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { width: 14px; height: 2px; display: inline-block; }
+.readout { font-size: 11px; color: var(--ink2); min-height: 17px; overflow-wrap: anywhere; margin-bottom: 4px; }
+.note { font-size: 11px; color: var(--muted); margin: 0; }
+.err { color: var(--down); font-size: 12px; margin: 0; }
+.setup { display: grid; gap: 10px; }
+.setup input { font: 13px var(--mono); padding: 9px; border-radius: 2px; border: 1px solid var(--line);
+  background: var(--bg); color: var(--ink); width: 100%; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.loading { color: var(--muted); font-size: 12px; padding: 20px 0; text-align: center; }
+@media (prefers-reduced-motion: no-preference) { .spin { animation: spin 1s linear infinite; display: inline-block; } }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Desk: the desktop page's terminal look, loosened for a thumb ─────────────────────────────────
+   On when <html data-theme="terminal">, the same switch as bot_dash/static/terminal.css. Token names and values
+   are that sheet's, so the two read side by side. Every rule here is scoped to it: the other five looks never see it.
+   The Flow tab's Desk rules are in flow.css.
+   What each colour means:
+     amber text    a label or a name            amber fill    you can edit this
+     white         a value or a title           grey          a unit, a time, a count beside a value
+     dark crimson  the function bar (the tabs)  steel blue    where you are (selected row, current segment)
+     green / red text   the sign of a number, always with its + or −
+     green fill    go, confirm                  red fill      an alarm            yellow fill   the crosshair
+   Phone rules: body text 15px, nothing under 12px, every control at least 44 by 44 with 8px to its neighbour.
+   No letter spacing. Upper case is for codes only. Radius 0, no soft shadows. */
+:root:not([data-theme="terminal"]) .tm-only { display: none !important; }
+[data-theme="terminal"] .tm-not { display: none !important; }
+:root[data-theme="terminal"] {
+  color-scheme: dark;
+  /* surfaces */
+  --bg: #000000; --panel: #000000; --raised: #0C0C0C; --chrome: #191919; --bar: #232323; --bar2: #3A3A3A;
+  --sel: #18395A; --seg-on: #2A5683; --fn-bar: #870F1E; --field: #FFA028; --go: #51A121; --cancel: #C52833;
+  --warn-fill: #FFE100; --info-fill: #46AAEC; --alert-block: #2A0A0E;
+  /* text */
+  --amber: #FFA028; --ink: #FFFFFF; --ink2: #D7D7D7; --muted: #A5A5A5; --faint: #8C8C8C;
+  --up: #50F06E; --down: #FF3D58; --down-sel: #FF8A98;
+  /* lines */
+  --line: #505050; --line-strong: #8C8C8C; --hair: #232323; --grid: #505050; --zero: #C0C0C0; --axis: #FFFFFF; --focus: #FFFFFF;
+  /* chart series: white solid, orange dashed, yellow dotted, then two greys told apart by dash */
+  --s1: #FFFFFF; --s2: #F06400; --s3: #FFFF00; --s4: #A5A5A5; --s5: #6E6E6E;
+  /* names this page's own rules and scripts already read */
+  --strip: var(--chrome); --accent: var(--amber); --on-accent: #000000; --num: var(--ink);
+  --book: var(--s1); --leg1: var(--s2); --leg2: var(--s3); --fund: var(--s5); --bid: var(--s1); --ask: var(--s2);
+  /* type: one step up from the desktop's 12 / 13 / 14 / 15 / 18 / 24 */
+  --font-ui: Tahoma, Verdana, "DejaVu Sans", sans-serif;
+  --font-mono: Menlo, Monaco, "DejaVu Sans Mono", Consolas, monospace;
+  --t-micro: 12px; --t-label: 13px; --t-body: 15px; --t-value: 16px; --t-big: 20px; --t-hero: 30px;
+  --tap: 44px; --fn-h: 51px;   /* the function bar: 50px of buttons and its 1px top rule */
+}
+
+/* globals */
+[data-theme="terminal"] body { font: 400 var(--t-body)/20px var(--font-ui); -webkit-font-smoothing: antialiased;
+  padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px)); }
+[data-theme="terminal"] ::selection { background: var(--info-fill); color: #000; }
+[data-theme="terminal"] :focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+[data-theme="terminal"] .up { color: var(--up) !important; }
+
+/* page: black, framed panels 4px apart; the toolbar runs edge to edge */
+[data-theme="terminal"] .wrap { max-width: none; gap: 4px; padding: 0; }
+[data-theme="terminal"] .wrap > :not(header), [data-theme="terminal"] #barRow {
+  margin-left: max(4px, env(safe-area-inset-left, 0px)); margin-right: max(4px, env(safe-area-inset-right, 0px)); }
+[data-theme="terminal"] main { gap: 4px; }
+
+/* toolbar row: the page name, the feed stamp, refresh */
+[data-theme="terminal"] header { order: -3; flex-wrap: nowrap; gap: 8px; min-height: var(--tap); border: 0; background: var(--chrome); color: var(--ink2);
+  padding: 0 max(4px, env(safe-area-inset-right, 0px)) 0 max(8px, env(safe-area-inset-left, 0px)); }
+[data-theme="terminal"] header .row { flex-wrap: nowrap; gap: 8px; min-width: 0; }
+[data-theme="terminal"] h1 { font: 700 var(--t-body)/20px var(--font-ui); letter-spacing: 0; color: var(--ink); white-space: nowrap; }
+[data-theme="terminal"] h1 span { color: var(--ink2); }
+[data-theme="terminal"] .stamp { color: var(--muted); font-size: var(--t-micro); white-space: nowrap; }
+[data-theme="terminal"] .live { margin: 0; padding: 0 5px; border-radius: 0; background: #fff; color: #000; font: 700 12px/16px var(--font-ui);
+  letter-spacing: 0; white-space: nowrap; }
+[data-theme="terminal"] #themeSeg { display: none; }
+
+/* buttons. Element rules stop at the Flow tab (:where keeps their weight as it was): its Desk rules are in flow.css. */
+[data-theme="terminal"] button:where(:not(.flow *)) { min-height: var(--tap); padding: 0 14px; border: 1px solid var(--line-strong); border-radius: 0; background: var(--bar);
+  color: var(--ink); font: 700 var(--t-label)/18px var(--font-ui); letter-spacing: 0; text-transform: none; }
+[data-theme="terminal"] button:where(:not(.flow *)):active { background: var(--sel); }
+[data-theme="terminal"] #refresh { width: var(--tap); padding: 0; border: 0; background: none; font: 400 20px/1 var(--font-ui); }
+[data-theme="terminal"] #refresh:active { background: var(--sel); }
+[data-theme="terminal"] #save { background: var(--go); border-color: var(--go); color: #000; }
+
+/* segments: a choice that changes what is shown (bar size, look). Steel blue is the one that is on. */
+[data-theme="terminal"] .seg { gap: 8px; }
+[data-theme="terminal"] .seg button { flex: 1 1 0; min-width: var(--tap); margin: 0; padding: 0 4px; border: 0; background: #1E1E1E; color: #F0F0F0; }
+[data-theme="terminal"] .seg button:active { background: var(--sel); }
+[data-theme="terminal"] .seg button[aria-pressed="true"] { background: var(--seg-on); color: #fff; }
+[data-theme="terminal"] .controls { display: contents; }
+[data-theme="terminal"] #barRow { flex-wrap: nowrap; gap: 8px; margin-top: 4px; padding-left: 4px; }
+[data-theme="terminal"] #barSeg, [data-theme="terminal"] #lookSeg { flex: 1 1 auto; max-width: 480px; }
+[data-theme="terminal"] .controls .lbl { margin: 0; color: var(--amber); font-size: var(--t-label); letter-spacing: 0; }
+[data-theme="terminal"] #lookSeg { padding: 8px; }
+
+/* function bar: the five views, numbered, fixed at the foot where a thumb reaches, above anything a view floats (the Flow
+   tab's sheet and its dim layer are 40 and 41). The view you are in is a black cut-out with an amber top rule. Each item's
+   hit box keeps 8px from the next; the 4px either side is painted with shadows, so nothing reaches outside the button's box. */
+[data-theme="terminal"] #tabList { position: fixed; left: 0; right: 0; bottom: 0; z-index: 50; flex-wrap: nowrap; gap: 8px;
+  padding: 0 max(4px, env(safe-area-inset-right, 0px)) env(safe-area-inset-bottom, 0px) max(4px, env(safe-area-inset-left, 0px));
+  background: var(--fn-bar); border-top: 1px solid #000; }
+[data-theme="terminal"] #tabList .item { position: relative; z-index: 0; flex: 1 1 auto; min-width: var(--tap); min-height: 50px; padding: 0 2px; border: 0;
+  background: none; color: var(--ink); font: 700 14px/18px var(--font-ui); white-space: normal; }
+[data-theme="terminal"] #tabList .item::before { content: ""; position: absolute; z-index: -1; inset: 0; box-shadow: -3px 0 0 var(--fn-bar), -4px 0 0 #000; }
+[data-theme="terminal"] #tabList .item:first-child::before { box-shadow: none; }
+[data-theme="terminal"] #tabList .item:active::before, [data-theme="terminal"] #tabList .item[aria-selected="true"]::before { background: #000; box-shadow: -4px 0 0 #000, 4px 0 0 #000; }
+[data-theme="terminal"] #tabList .item[aria-selected="true"]::after { content: ""; position: absolute; z-index: -1; top: 0; left: 0; right: 0; height: 2px; background: var(--amber);
+  box-shadow: -3px 0 0 var(--amber), 4px 0 0 var(--amber); }
+[data-theme="terminal"] #tabList .item:first-child[aria-selected="true"]::after { box-shadow: -4px 0 0 var(--amber), 4px 0 0 var(--amber); }
+[data-theme="terminal"] #tabList .item .n { margin-right: 3px; font-weight: 400; }
+
+/* status line of a view */
+[data-theme="terminal"] .window { padding: 2px 4px 4px; border-bottom: 1px solid var(--hair); color: var(--ink2); font: 400 var(--t-label)/18px var(--font-ui); }
+
+/* panel frame and title bar */
+[data-theme="terminal"] .panel { position: relative; padding: 0; border: 1px solid var(--line); border-radius: 0; background: var(--bg); }
+[data-theme="terminal"] h2:where(:not(.flow *)), [data-theme="terminal"] .bk h3 { margin: 0; min-height: 28px; padding: 5px 8px; border: 0; background: var(--bar2); color: var(--ink);
+  font: 700 var(--t-label)/18px var(--font-ui); letter-spacing: 0; text-transform: none; }
+[data-theme="terminal"] h2.has-tool { padding-right: 56px; }
+/* a plot tool: plain text in the title bar, with a 44px hit box that reaches down over the readout row */
+[data-theme="terminal"] h2 .small { position: absolute; top: 0; right: 0; display: flex; align-items: flex-start; justify-content: flex-end; width: 56px; height: var(--tap);
+  min-height: 0; padding: 5px 8px 0 0; border: 0; background: none; color: var(--ink2); font: 400 var(--t-label)/18px var(--font-ui); }
+[data-theme="terminal"] h2 .small:active { background: none; color: var(--info-fill); }
+
+/* book boxes: one headline each; the first is the view's hero */
+[data-theme="terminal"] .books, [data-theme="terminal"] .tiles { gap: 4px; }
+[data-theme="terminal"] .bk .big { margin: 0; padding: 6px 8px 2px; color: var(--ink); font: 700 var(--t-big)/24px var(--font-ui); }
+[data-theme="terminal"] .bk:first-child .big { font: 700 var(--t-hero)/36px var(--font-ui); }
+[data-theme="terminal"] .bk .big small { margin-left: 10px; font-size: var(--t-value); }
+[data-theme="terminal"] .bk .big.up::before { content: "▲"; margin-right: 6px; font-size: 0.6em; vertical-align: 0.15em; }
+[data-theme="terminal"] .bk .big.down::before { content: "▼"; margin-right: 6px; font-size: 0.6em; vertical-align: 0.15em; }
+[data-theme="terminal"] .kv { gap: 0 12px; padding: 2px 8px 4px; font-size: var(--t-body); line-height: 24px; }
+[data-theme="terminal"] .kv dt { color: var(--amber); font-size: 14px; letter-spacing: 0; text-transform: none; }
+[data-theme="terminal"] .kv dd { color: var(--ink); }
+[data-theme="terminal"] .foot { margin: 0; padding: 2px 8px 6px; color: var(--muted); font-size: var(--t-micro); line-height: 16px; }
+
+/* tiles: a small panel each, the label in its title bar */
+[data-theme="terminal"] .tile { padding: 0 0 6px; border: 1px solid var(--line); border-radius: 0; background: var(--bg); }
+[data-theme="terminal"] .tile .k { padding: 3px 8px; background: var(--bar2); color: var(--ink); font: 700 var(--t-label)/18px var(--font-ui); letter-spacing: 0; text-transform: none; }
+[data-theme="terminal"] .tile .v { margin: 0; padding: 4px 8px 0; color: var(--ink); font: 700 var(--t-big)/24px var(--font-ui); }
+[data-theme="terminal"] .tile .s { margin: 0; padding: 0 8px; color: var(--muted); font-size: var(--t-micro); line-height: 16px; }
+[data-theme="terminal"] #lobTiles .tile:nth-child(3) { order: -2; }
+[data-theme="terminal"] #lobTiles .tile:nth-child(4) { order: -1; }
+[data-theme="terminal"] #lobTiles .tile:nth-child(3) .v { font: 700 var(--t-hero)/36px var(--font-ui); }
+/* an alarm is a red fill with white text, never a number's sign */
+[data-theme="terminal"] .alarm { color: #fff !important; }
+[data-theme="terminal"] .tile .v.alarm { display: inline-block; margin: 4px 8px 0; padding: 0 8px; background: var(--cancel); }
+[data-theme="terminal"] td.alarm { background: var(--cancel) !important; font-weight: 700; }
+
+/* tables: grey head, amber names, white figures, hairlines; the first column stays put when the rest scrolls */
+[data-theme="terminal"] table { font-size: var(--t-body); }
+[data-theme="terminal"] th { height: 28px; padding: 0 8px; border: 0; border-right: 1px solid #000; background: var(--bar); color: var(--ink2);
+  font: 400 var(--t-label)/18px var(--font-ui); letter-spacing: 0; text-transform: none; }
+[data-theme="terminal"] td { height: 30px; padding: 0 8px; border: 0; border-right: 1px solid var(--hair); border-bottom: 1px solid var(--hair); }
+[data-theme="terminal"] th:first-child, [data-theme="terminal"] td:first-child { position: sticky; left: 0; z-index: 1; box-shadow: 1px 0 0 var(--line); }
+[data-theme="terminal"] td:first-child { background: var(--bg); color: var(--amber); }
+[data-theme="terminal"] .pill { display: inline-block; padding: 0 5px; border: 0; box-shadow: inset 0 0 0 1px var(--line-strong); color: var(--ink) !important;
+  font: 700 12px/16px var(--font-ui); letter-spacing: 0; }
+/* rows you tap: one-line cards, 44px high, 8px apart */
+[data-theme="terminal"] #lobTable { border-collapse: separate; border-spacing: 0 8px; margin-top: -8px; }
+[data-theme="terminal"] #lobTable td { height: var(--tap); background: var(--raised); border-right: 0; border-top: 1px solid var(--bar2); border-bottom: 1px solid var(--bar2); }
+[data-theme="terminal"] #lobTable tr.pick:hover td { background: var(--raised); }
+[data-theme="terminal"] #lobTable tr.pick.sel td { background: var(--sel); border-color: var(--info-fill); }
+[data-theme="terminal"] #lobTable tr.pick.sel td:first-child { box-shadow: inset 3px 0 0 var(--info-fill), 1px 0 0 var(--line); }
+[data-theme="terminal"] #lobTable tr.pick.sel .down { color: var(--down-sel) !important; }
+[data-theme="terminal"] #lobTable tr.pick.sel .alarm { color: #fff !important; }
+
+/* charts: the readout row, the plot, the series switches */
+[data-theme="terminal"] .readout { min-height: 40px; margin: 0; padding: 4px 8px; color: var(--ink2); font: 400 var(--t-micro)/16px var(--font-ui); }
+[data-theme="terminal"] .readout .p { margin-right: 10px; white-space: nowrap; }
+[data-theme="terminal"] .readout .t, [data-theme="terminal"] .readout .u { color: var(--muted); }
+[data-theme="terminal"] .readout .k { color: var(--amber); }
+[data-theme="terminal"] .readout .v { color: var(--ink); }
+[data-theme="terminal"] .has-tool + .readout { padding-right: 56px; }
+[data-theme="terminal"] .chart text { fill: var(--axis); font: 12px var(--font-ui); }
+[data-theme="terminal"] .chart text.tag { fill: #000; font-weight: 700; }
+[data-theme="terminal"] .toggles { gap: 8px; margin: 0; padding: 6px 8px 8px; color: var(--ink2); font-size: var(--t-label); }
+[data-theme="terminal"] .toggles label { position: relative; min-width: var(--tap); min-height: var(--tap); padding: 0 10px; gap: 6px; background: var(--raised);
+  box-shadow: inset 0 0 0 1px var(--bar2); }
+[data-theme="terminal"] .toggles label:has(input:checked) { box-shadow: inset 0 0 0 1px var(--line-strong); }
+[data-theme="terminal"] .toggles input { position: absolute; opacity: 0; pointer-events: none; }
+[data-theme="terminal"] .toggles label:has(input:focus-visible) { outline: 2px solid var(--focus); outline-offset: 1px; }
+[data-theme="terminal"] .toggles i { width: 18px; }
+[data-theme="terminal"] .toggles i.dot { border-top-style: dotted; }
+[data-theme="terminal"] .toggles input:not(:checked) + i { opacity: 0.45; }
+[data-theme="terminal"] .toggles input:not(:checked) + i + span { color: var(--faint); }
+[data-theme="terminal"] .legend { gap: 4px 14px; margin: 0; padding: 4px 8px 8px; color: var(--ink2); font-size: var(--t-micro); line-height: 16px; }
+[data-theme="terminal"] .legend i { width: 18px; height: 0; background: none !important; border-top: 2px solid var(--s1); }
+[data-theme="terminal"] .legend i.lg-ask { border-top: 2px dashed var(--s2); }
+[data-theme="terminal"] .legend i.lg-ours { border-top: 2px dotted var(--amber); }
+
+/* prose, messages, the address entry */
+[data-theme="terminal"] .note { padding: 4px 8px; color: var(--ink2); font: 400 14px/19px var(--font-ui); }
+[data-theme="terminal"] .loading { padding: 28px 8px; color: var(--muted); font-size: 14px; }
+[data-theme="terminal"] #err { order: -2; padding: 8px 8px 8px 11px; background: var(--alert-block); box-shadow: inset 3px 0 0 var(--cancel); color: var(--ink);
+  font: 400 14px/19px var(--font-ui); }
+[data-theme="terminal"] #err:empty { display: none; }
+[data-theme="terminal"] .wrap:has(#err:not(:empty)) #loading { display: none; }       /* a failed load is not still loading */
+[data-theme="terminal"] #err::before, [data-theme="terminal"] #setupErr:not(:empty)::before { content: "✕ "; color: var(--down); font-weight: 700; }
+[data-theme="terminal"] #setupErr { color: var(--down); font-size: 14px; line-height: 19px; }
+[data-theme="terminal"] .setup { gap: 0; }
+[data-theme="terminal"] .setup label { padding: 8px 8px 6px; color: var(--amber); font-size: 14px; line-height: 19px; }
+[data-theme="terminal"] .setup input { width: calc(100% - 16px); height: var(--tap); margin: 0 8px; padding: 0 8px; border: 0; border-radius: 0; background: var(--field);
+  color: #000; font: 400 16px/20px var(--font-mono); }
+[data-theme="terminal"] .setup input::placeholder { color: #5C3A00; opacity: 1; }
+[data-theme="terminal"] .setup input:focus { outline: 1px solid #fff; box-shadow: 0 0 0 2px #000, 0 0 0 3px var(--info-fill); }
+[data-theme="terminal"] .setup .row { padding: 8px; gap: 8px 12px; }
+[data-theme="terminal"] main > p.row { margin-top: 4px; margin-bottom: 4px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="row"><h1>LOB<span>.DESK</span></h1><span class="live" id="live" hidden>● LIVE</span><span class="stamp">v7</span><button class="small tm-not" data-theme-pick="terminal" aria-pressed="false">Desk look</button></div>
+    <div class="row">
+      <div class="stamp" id="stamp">not loaded</div>
+      <div class="seg" id="themeSeg" role="group" aria-label="Night or day mode">
+        <button aria-pressed="true" data-theme-pick="dark">☾ Night</button><button aria-pressed="false" data-theme-pick="light">☀ Day</button><button aria-pressed="false" data-theme-pick="read">◐ Read</button><button aria-pressed="false" data-theme-pick="warm">◒ Warm</button><button aria-pressed="false" data-theme-pick="mono">■ Mono</button>
+      </div>
+      <button id="refresh" aria-label="Refresh now">↻</button>
+    </div>
+  </header>
+
+
+  <div class="controls" id="tabs" hidden>
+    <nav class="seg" role="tablist" id="tabList">
+      <button role="tab" class="item" aria-selected="true" data-tab="today"><span class="n tm-only">1)</span>Today</button>
+      <button role="tab" class="item" aria-selected="false" data-tab="d30" data-desk="30 days" data-classic="Last 30 days"><span class="n tm-only">2)</span>Last 30 days</button>
+      <button role="tab" class="item" aria-selected="false" data-tab="all"><span class="n tm-only">3)</span>All</button>
+      <button role="tab" class="item" aria-selected="false" data-tab="lob" data-desk="Book" data-classic="Order book"><span class="n tm-only">4)</span>Order book</button>
+      <button role="tab" class="item" aria-selected="false" data-tab="flow"><span class="n tm-only">5)</span>Flow</button>
+    </nav>
+    <div class="row" id="barRow"><span class="lbl" data-desk="Bars" data-classic="BARS">BARS</span>
+      <div class="seg" id="barSeg">
+        <button aria-pressed="true" data-bar="auto">Auto</button><button aria-pressed="false" data-bar="1m">1m</button><button aria-pressed="false" data-bar="5m">5m</button><button aria-pressed="false" data-bar="15m">15m</button><button aria-pressed="false" data-bar="1h">1h</button>
+      </div>
+    </div>
+  </div>
+
+  <section class="panel setup" id="setup" hidden>
+    <h2>Set up</h2>
+    <label for="addr">Hyperliquid master address. Stored on this phone only.</label>
+    <input id="addr" placeholder="0x…" autocomplete="off" autocapitalize="off" spellcheck="false">
+    <div class="row"><button id="save">Save and load</button><span class="err" id="setupErr"></span></div>
+  </section>
+
+  <main id="view-pnl" hidden>
+    <div class="window" id="windowLine"></div>
+    <div class="books" id="bookCards"></div>
+    <section class="panel">
+      <h2 class="has-tool"><span id="combinedTitle">Combined 50/50, % of capital</span><button class="small" data-fit="combined">Fit</button></h2>
+      <div class="readout" id="ro-combined"></div>
+      <div class="lw tall" id="ch-combined"></div>
+      <div class="toggles" id="tg-combined"></div>
+    </section>
+    <section class="panel">
+      <h2 class="has-tool"><span>Emissions, $</span><button class="small" data-fit="emissions">Fit</button></h2>
+      <div class="readout" id="ro-emissions"></div>
+      <div class="lw" id="ch-emissions"></div>
+      <div class="toggles" id="tg-emissions"></div>
+    </section>
+    <section class="panel">
+      <h2 class="has-tool"><span>BTC/PAXG, $</span><button class="small" data-fit="btcpaxg">Fit</button></h2>
+      <div class="readout" id="ro-btcpaxg"></div>
+      <div class="lw" id="ch-btcpaxg"></div>
+      <div class="toggles" id="tg-btcpaxg"></div>
+    </section>
+    <div id="dailySection" hidden>
+      <main>
+        <div class="tiles" id="dailyTiles"></div>
+        <section class="panel">
+          <h2>Daily return, 50/50 book, since both live</h2>
+          <div class="readout" id="dayReadout"></div>
+          <svg class="chart" id="dayChart" viewBox="0 0 600 160" role="img" aria-label="Daily return bars"></svg>
+        </section>
+        <section class="panel">
+          <h2>Daily table</h2>
+          <div class="scroll"><table id="dailyTable"></table></div>
+        </section>
+      </main>
+    </div>
+    <section class="panel" id="posSection">
+      <h2>Positions</h2>
+      <div class="scroll"><table id="posTable"></table></div>
+    </section>
+    <p class="note">Hyperliquid public API, pulled by this phone. Pinch or drag a chart to zoom; Fit resets it. Total = price + fees + funding. Price P&amp;L = position held × price move on each candle, plus fill edge. Capital = equity minus P&amp;L in the window. Combined = equal weight of each book's % P&amp;L; on 30 days and All it starts when both books were live. Coin lines are price only. Times UTC.</p>
+    <p class="row"><button id="forget">Change address</button></p>
+  </main>
+
+  <main id="view-lob" hidden>
+    <div class="tiles" id="lobTiles"></div>
+    <section class="panel">
+      <h2>Depth for held names</h2>
+      <p class="note" style="margin:0 0 8px">Exit side: bids for longs, asks for shorts. "Size / depth" = our notional over exit-side depth within 50 bp of mid. Tap a row for its ladder.</p>
+      <div class="scroll"><table id="lobTable"></table></div>
+    </section>
+    <section class="panel">
+      <h2 id="ladderTitle">Ladder</h2>
+      <div class="readout" id="ladderReadout"></div>
+      <svg class="chart" id="ladderChart" viewBox="0 0 600 220" role="img" aria-label="Cumulative depth chart"></svg>
+      <div class="legend"><span><i style="background:var(--bid)"></i>Bids, cumulative $</span><span><i class="lg-ask" style="background:var(--ask)"></i>Asks, cumulative $</span><span><i class="lg-ours" style="background:var(--accent)"></i>Our size</span></div>
+    </section>
+  </main>
+  <section class="flow" id="view-flow" hidden aria-label="Live BTC order flow"></section>
+  <div class="loading" id="loading" hidden><span class="spin">↻</span> Loading from Hyperliquid…</div>
+  <p class="err" id="err"></p>
+  <section class="panel tm-only" id="deskSet">
+    <h2>Look</h2>
+    <div class="seg" id="lookSeg" role="group" aria-label="Look">
+      <button aria-pressed="false" data-theme-pick="terminal">Desk</button><button aria-pressed="false" data-theme-pick="dark">Night</button><button aria-pressed="false" data-theme-pick="light">Day</button><button aria-pressed="false" data-theme-pick="read">Read</button><button aria-pressed="false" data-theme-pick="warm">Warm</button><button aria-pressed="false" data-theme-pick="mono">Mono</button>
+    </div>
+  </section>
+</div>
+
+<script src="flow-shared.js"></script>
+<script src="flow-engine.js"></script>
+<script src="flow.js"></script>
+<script>
+"use strict";
+/* ---------- pure logic (also run by node tests) ---------- */
+const LOB = (() => {
+  const API = "https://api.hyperliquid.xyz/info";
+  const DAY_MS = 86400000;
+  const MIN_PRIOR_VALUE = 100;           // ignore days before an account was funded
+  const DEPTH_BANDS_BP = [10, 50, 100];
+  const FILLS_PAGE = 2000, FUNDING_PAGE = 500, MAX_BARS = 1000;
+  const INTERVALS = [["1m", 60e3], ["5m", 300e3], ["15m", 900e3], ["1h", 3600e3], ["4h", 14400e3], ["1d", DAY_MS]];
+  const ZERO = 1e-9;
+  /* Books and the accounts each reads (sub-account names, or "master"). The first is its current account. */
+  const BOOKS = [
+    { key: "emissions", label: "Emissions", accounts: ["emissions"] },
+    { key: "btcpaxg", label: "BTC/PAXG", accounts: ["novphi-crypto", "master"] },
+  ];
+
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  async function info(body) {
+    for (let attempt = 0; attempt < 6; attempt++) {
+      const res = await fetch(API, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      if (res.status === 429) { await sleep(2000 * (attempt + 1)); continue; }
+      if (!res.ok) throw new Error(`Hyperliquid ${body.type} failed: HTTP ${res.status}.`);
+      return res.json();
+    }
+    throw new Error("Hyperliquid rate limit. Wait a minute.");
+  }
+  async function pool(items, limit, fn) {
+    const out = new Array(items.length);
+    let next = 0;
+    await Promise.all(Array.from({ length: Math.min(limit, items.length) }, async () => {
+      while (next < items.length) { const i = next++; out[i] = await fn(items[i], i); }
+    }));
+    return out;
+  }
+
+  const isAddress = (text) => /^0x[0-9a-fA-F]{40}$/.test(text.trim());
+  const dayKey = (ms) => new Date(ms).toISOString().slice(0, 10);
+  const floorTo = (t, ms) => Math.floor(t / ms) * ms;
+  const HL_CANDLE_LIMIT = 5000;           // HL serves only the latest 5,000 candles per coin and interval
+  /** Bar size for a window: the finest allowed by ``finest`` that HL can still serve back to the window start.
+   *  Auto = the finest that keeps the window within MAX_BARS bars. */
+  function chooseInterval(spanMs, finest = "auto") {
+    const covering = INTERVALS.filter(([, ms]) => ms * HL_CANDLE_LIMIT * 0.98 >= spanMs);
+    const pick = finest === "auto" ? covering.find(([, ms]) => spanMs / ms <= MAX_BARS)
+                                   : covering.find(([, ms]) => ms >= INTERVALS.find(([n]) => n === finest)[1]);
+    const [name, ms] = pick || covering[0] || INTERVALS[INTERVALS.length - 1];
+    return { name, ms };
+  }
+  /** Worst peak-to-trough fall of a % P&L path, as a fraction of starting capital plus P&L. */
+  function maxDrawdown(pctPath) {
+    let peak = -Infinity, dd = 0;
+    for (const p of pctPath) { const nav = 1 + p / 100; peak = Math.max(peak, nav); dd = Math.min(dd, nav / peak - 1); }
+    return dd;
+  }
+
+  /* ---- fetchers ---- */
+  async function fetchFills(address, startMs) {
+    const seen = new Map();
+    let cursor = startMs;
+    for (;;) {
+      const page = await info({ type: "userFillsByTime", user: address, startTime: cursor });
+      for (const f of page) seen.set(f.tid, f);
+      if (page.length < FILLS_PAGE) break;
+      cursor = Math.max(...page.map((f) => f.time)) + 1;
+    }
+    return [...seen.values()].map((f) => ({ t: floorTo(f.time, 60e3), coin: f.coin, sz: +f.sz * (f.side === "B" ? 1 : -1),
+                                             px: +f.px, fee: +f.fee, tid: f.tid })).sort((a, b) => a.t - b.t);
+  }
+  async function fetchFunding(address, startMs) {
+    const rows = [];
+    let cursor = startMs;
+    for (;;) {
+      const page = await info({ type: "userFunding", user: address, startTime: cursor });
+      rows.push(...page);
+      if (page.length < FUNDING_PAGE) break;
+      cursor = page[page.length - 1].time + 1;
+    }
+    return rows.map((r) => ({ t: r.time, usd: +r.delta.usdc })).sort((a, b) => a.t - b.t);
+  }
+  async function fetchCloses(coin, interval, startMs, endMs) {
+    const bars = await info({ type: "candleSnapshot", req: { coin, interval, startTime: startMs, endTime: endMs } });
+    return bars.map((b) => [b.t, +b.c]);
+  }
+
+  const CANDLE_REFRESH_MS = 5 * 60e3;
+  /** Closes from a cache: full download once, new bars every five minutes, and the live bar moved to the
+   *  current mid on every call, so a refresh costs one allMids call instead of a candle call per coin. */
+  async function cachedCloses(coin, interval, startMs, nowMs, cache, mids) {
+    const key = `${coin}|${interval.name}`;
+    let entry = cache.get(key);
+    if (!entry || entry.from > startMs) {
+      entry = { from: startMs, rows: await fetchCloses(coin, interval.name, startMs, nowMs), at: nowMs };
+    } else if (nowMs - entry.at > CANDLE_REFRESH_MS) {
+      const lastT = entry.rows.length ? entry.rows[entry.rows.length - 1][0] : startMs;
+      const fresh = await fetchCloses(coin, interval.name, lastT, nowMs);
+      entry = { from: entry.from, rows: entry.rows.filter(([t]) => t < lastT).concat(fresh), at: nowMs };
+    }
+    cache.set(key, entry);
+    let rows = entry.rows.filter(([t]) => t >= startMs);
+    const mid = mids ? +mids[coin] : NaN;
+    if (Number.isFinite(mid) && rows.length) {
+      const bar = floorTo(nowMs, interval.ms), lastT = rows[rows.length - 1][0];
+      if (lastT === bar) rows = rows.slice(0, -1).concat([[bar, mid]]);
+      else if (lastT < bar) rows = rows.concat([[bar, mid]]);
+    }
+    return rows;
+  }
+  /** Funding from a per-account cache, topped up from the last event. */
+  async function cachedFunding(address, startMs, cache) {
+    let entry = cache.get(address);
+    if (!entry || entry.from > startMs) entry = { from: startMs, rows: await fetchFunding(address, startMs) };
+    else {
+      const lastT = entry.rows.length ? entry.rows[entry.rows.length - 1].t : startMs;
+      const fresh = await fetchFunding(address, lastT + 1);
+      entry = { from: entry.from, rows: entry.rows.concat(fresh) };
+    }
+    cache.set(address, entry);
+    return entry.rows.filter((r) => r.t >= startMs);
+  }
+
+  /** P&L over a window of bars, as bot-dash: per coin price P&L (held position × close move, plus fill edge),
+   *  long and short legs, fees and funding, cumulative. The first bar is the baseline. */
+  function summarise({ fills, closes, freq, funding = [] }) {
+    const coins = [...closes.keys()];
+    const candleTimes = new Set();
+    for (const rows of closes.values()) for (const [t] of rows) candleTimes.add(t);
+    if (!candleTimes.size) return null;
+    const start = Math.min(...candleTimes);
+    const bucket = (t) => floorTo(t, freq);
+    const inFunding = funding.filter((f) => f.t >= start);
+    const times = new Set(candleTimes);
+    for (const f of fills) if (bucket(f.t) >= start) times.add(bucket(f.t));
+    for (const f of inFunding) times.add(bucket(f.t));
+    const index = [...times].sort((a, b) => a - b);
+    const at = new Map(index.map((t, i) => [t, i]));
+    const n = index.length;
+    const longs = new Float64Array(n), shorts = new Float64Array(n), feesBar = new Float64Array(n),
+          fundBar = new Float64Array(n), gross = new Float64Array(n);
+    const perCoin = new Map();
+    for (const coin of coins) {
+      const close = new Float64Array(n).fill(NaN);
+      for (const [t, c] of closes.get(coin)) close[at.get(t)] = c;
+      for (let i = 1; i < n; i++) if (Number.isNaN(close[i])) close[i] = close[i - 1];
+      const trade = new Float64Array(n), edge = new Float64Array(n);
+      let carried = 0;
+      for (const f of fills) {
+        if (f.coin !== coin) continue;
+        const b = bucket(f.t);
+        if (b < start) { carried += f.sz; continue; }
+        const i = at.get(b);
+        trade[i] += f.sz;
+        if (!Number.isNaN(close[i])) edge[i] += f.sz * (close[i] - f.px);
+      }
+      const cum = new Float64Array(n);
+      let pos = carried, run = 0;
+      for (let i = 0; i < n; i++) {
+        const prevPos = i === 0 ? 0 : pos;
+        pos = (i === 0 ? carried : pos) + trade[i];
+        const diff = i > 0 && !Number.isNaN(close[i]) && !Number.isNaN(close[i - 1]) ? close[i] - close[i - 1] : 0;
+        const pnl = prevPos * diff + edge[i];
+        const held = Math.abs(prevPos) > ZERO ? prevPos : pos;
+        if (held > ZERO) longs[i] += pnl; else if (held < -ZERO) shorts[i] += pnl;
+        if (!Number.isNaN(close[i])) gross[i] += Math.abs(pos) * close[i];
+        run += pnl; cum[i] = run;
+      }
+      perCoin.set(coin, cum);
+    }
+    for (const f of fills) { const b = bucket(f.t); if (b >= start) feesBar[at.get(b)] += f.fee; }
+    for (const f of inFunding) fundBar[at.get(bucket(f.t))] += f.usd;
+    const out = { times: index, longs: [], shorts: [], price: [], fees: [], funding: [], total: [], gross: Array.from(gross), perCoin };
+    let l = 0, s = 0, fe = 0, fu = 0;
+    for (let i = 0; i < n; i++) {
+      l += longs[i]; s += shorts[i]; fe -= feesBar[i]; fu += fundBar[i];
+      out.longs.push(l); out.shorts.push(s); out.price.push(l + s); out.fees.push(fe); out.funding.push(fu); out.total.push(l + s + fe + fu);
+    }
+    return out;
+  }
+
+  /** Coins a window needs closes for: held at its start, or traded inside it. */
+  function windowCoins(fills, startMs) {
+    const carried = new Map(), traded = new Set();
+    for (const f of fills) {
+      if (f.t < startMs) carried.set(f.coin, (carried.get(f.coin) || 0) + f.sz);
+      else traded.add(f.coin);
+    }
+    for (const [c, v] of carried) if (Math.abs(v) > ZERO) traded.add(c);
+    return [...traded].sort();
+  }
+
+  /** Each book's % of capital, and the equal-weight mean, from ``fromMs`` (each book rebased to 0 there). */
+  function combine(books, fromMs) {
+    const times = [...new Set(books.flatMap((b) => b.sum.times.filter((t) => t >= fromMs)))].sort((a, b) => a - b);
+    const lines = books.map((b) => {
+      const { times: bt, total } = b.sum;
+      let j = -1, base = null;
+      const pct = [];
+      for (const t of times) {
+        while (j + 1 < bt.length && bt[j + 1] <= t) j++;
+        const v = j >= 0 ? total[j] : 0;
+        if (base === null) base = v;
+        pct.push((v - base) / b.capital * 100);
+      }
+      return pct;
+    });
+    return { times, books: lines, combined: times.map((_, i) => lines.reduce((s, l) => s + l[i], 0) / lines.length) };
+  }
+
+  /* ---- daily record from HL portfolio history (transfers excluded) ---- */
+  function endOfDay(allTime) {
+    const points = new Map();
+    for (const [t, v] of allTime.pnlHistory) points.set(t, { ...(points.get(t) || {}), pnl: +v });
+    for (const [t, v] of allTime.accountValueHistory) points.set(t, { ...(points.get(t) || {}), av: +v });
+    const times = [...points.keys()].sort((a, b) => a - b);
+    let pnl = NaN, av = NaN;
+    const last = new Map();
+    for (const t of times) {
+      const p = points.get(t);
+      if (p.pnl !== undefined) pnl = p.pnl;
+      if (p.av !== undefined) av = p.av;
+      last.set(dayKey(t), { pnl, av });
+    }
+    if (!last.size) return [];
+    const keys = [...last.keys()];
+    const out = [];
+    let prev = null;
+    for (let t = Date.parse(keys[0]); t <= Date.parse(keys[keys.length - 1]); t += DAY_MS) {
+      const k = dayKey(t);
+      prev = last.get(k) || prev;
+      out.push({ date: k, ...prev });
+    }
+    return out;
+  }
+  function dailyReturns(allTime) {
+    const eod = endOfDay(allTime);
+    const rows = [];
+    for (let i = 1; i < eod.length; i++) {
+      const prior = eod[i - 1].av;
+      if (!(prior > MIN_PRIOR_VALUE)) continue;
+      const pnl = eod[i].pnl - eod[i - 1].pnl;
+      rows.push({ date: eod[i].date, pnl, ret: pnl / prior, av: eod[i].av });
+    }
+    return rows;
+  }
+  function combineDaily(legs) {
+    const maps = legs.map((leg) => new Map(leg.map((r) => [r.date, r])));
+    const dates = [...maps[0].keys()].filter((d) => maps.every((m) => m.has(d))).sort();
+    return dates.map((date) => {
+      const rows = maps.map((m) => m.get(date));
+      return { date, pnl: rows.reduce((s, r) => s + r.pnl, 0), ret: rows.reduce((s, r) => s + r.ret, 0) / rows.length };
+    });
+  }
+  function stats(rows) {
+    const rets = rows.map((r) => r.ret);
+    const n = rets.length;
+    const mean = n ? rets.reduce((a, b) => a + b, 0) / n : NaN;
+    const sd = n > 1 ? Math.sqrt(rets.reduce((s, x) => s + (x - mean) ** 2, 0) / (n - 1)) : NaN;
+    let nav = 1, peak = 1, maxDd = 0;
+    for (const r of rets) { nav *= 1 + r; peak = Math.max(peak, nav); maxDd = Math.min(maxDd, nav / peak - 1); }
+    const red = rows.filter((r) => r.ret < 0);
+    let streak = 0;
+    for (let i = n - 1; i >= 0 && rets[i] >= 0; i--) streak++;
+    return { n, cum: nav - 1, pnl: rows.reduce((s, r) => s + r.pnl, 0), sharpe: sd > 0 ? mean / sd * Math.sqrt(365) : NaN,
+             vol: sd * Math.sqrt(365), maxDd, red: red.length, lastRed: red.length ? red[red.length - 1] : null, greenStreak: streak,
+             worst: rows.reduce((w, r) => (!w || r.ret < w.ret ? r : w), null) };
+  }
+
+  function positions(state) {
+    const value = +state.marginSummary.accountValue;
+    return state.assetPositions.map(({ position: p }) => {
+      const size = +p.szi;
+      const notional = Math.sign(size) * +p.positionValue;
+      return { coin: p.coin, size, notional, weight: value ? notional / value : NaN, upnl: +p.unrealizedPnl,
+               funding: -(+p.cumFunding.sinceOpen) };
+    }).sort((a, b) => b.weight - a.weight);
+  }
+
+  /** Spread and depth within bands, from an l2Book snapshot. */
+  function depth(l2, notional) {
+    const [bids, asks] = l2.levels.map((side) => side.map((l) => ({ px: +l.px, sz: +l.sz })));
+    if (!bids.length || !asks.length) return null;
+    const mid = (bids[0].px + asks[0].px) / 2;
+    const within = (side, bp) => side.filter((l) => Math.abs(l.px / mid - 1) * 1e4 <= bp).reduce((s, l) => s + l.px * l.sz, 0);
+    const bands = Object.fromEntries(DEPTH_BANDS_BP.map((bp) => [bp, { bid: within(bids, bp), ask: within(asks, bp) }]));
+    const exit = notional >= 0 ? "bid" : "ask";
+    return { mid, spreadBp: (asks[0].px - bids[0].px) / mid * 1e4, bands, exit,
+             ratio50: Math.abs(notional) / (bands[50][exit] || NaN), bids, asks };
+  }
+  async function loadBooks(coins, notionals) {
+    return pool(coins, 5, async (coin) => {
+      const l2 = await info({ type: "l2Book", coin });
+      return { coin, notional: notionals[coin] || 0, ...depth(l2, notionals[coin] || 0) };
+    });
+  }
+
+  /** Account directory and live state: sub-accounts by name plus the master. */
+  async function loadAccounts(master) {
+    const subs = (await info({ type: "subAccounts", user: master })) || [];
+    const masterState = await info({ type: "clearinghouseState", user: master });
+    const out = new Map([["master", { address: master, state: masterState }]]);
+    for (const s of subs) out.set(s.name, { address: s.subAccountUser, state: s.clearinghouseState });
+    const missing = BOOKS.flatMap((b) => b.accounts).filter((a) => !out.has(a));
+    if (missing.length) throw new Error(`Sub-accounts not found: ${missing.join(", ")}.`);
+    return out;
+  }
+
+  /** One book over a window. Fills come from a cache of each account's full history. */
+  async function loadBookWindow(book, accounts, fillsByAccount, startMs, nowMs, finest = "auto",
+                                 cache = { candles: new Map(), funding: new Map() }, mids = null) {
+    const fills = book.accounts.flatMap((a) => fillsByAccount.get(a) || []).sort((a, b) => a.t - b.t);
+    const firstFill = fills.length ? fills[0].t : nowMs;
+    const interval = chooseInterval(nowMs - Math.max(startMs, firstFill), finest);
+    const start = floorTo(Math.max(startMs, firstFill), interval.ms);
+    const coins = windowCoins(fills, start);
+    const closes = new Map(await pool(coins, 4, async (c) => [c, await cachedCloses(c, interval, start, nowMs, cache.candles, mids)]));
+    const funding = [];
+    for (const a of book.accounts) funding.push(...await cachedFunding(accounts.get(a).address, start, cache.funding));
+    funding.sort((a, b) => a.t - b.t);
+    const sum = summarise({ fills, closes, freq: interval.ms, funding });
+    // Capital, gross and positions come from the book's current account only (as BOT.DASH); older accounts add P&L history.
+    const current = accounts.get(book.accounts[0]).state;
+    const equity = +current.marginSummary.accountValue;
+    const grossNow = +current.marginSummary.totalNtlPos;
+    const npos = current.assetPositions.length;
+    const last = sum ? sum.total[sum.total.length - 1] : 0;
+    const capital = equity - last;
+    const days = sum ? (sum.times[sum.times.length - 1] - sum.times[0]) / DAY_MS : 0;
+    return { ...book, interval, start: sum ? sum.times[0] : start, sum, equity, grossNow, npos, capital,
+             fundingPerDay: days > 0 && sum ? sum.funding[sum.funding.length - 1] / days : 0 };
+  }
+
+  return { info, pool, isAddress, chooseInterval, maxDrawdown, fetchFills, fetchFunding, fetchCloses, summarise, windowCoins, combine,
+           endOfDay, dailyReturns, combineDaily, stats, positions, depth, loadBooks, loadAccounts, loadBookWindow, BOOKS, DAY_MS };
+})();
+if (typeof module !== "undefined") module.exports = LOB;
+
+/* ---------- UI ---------- */
+if (typeof document !== "undefined") (() => {
+  const $ = (id) => document.getElementById(id);
+  const KEY = "lob.master.v1";
+  const TAB_KEY = "lob.tab.v1";
+  const BAR_KEY = "lob.bar.v1";
+  const THEME_KEY = "lob.theme.v1";
+  const THEMES = { terminal: "Desk", dark: "Night", light: "Day", read: "Read", warm: "Warm", mono: "Mono" };
+  const DEFAULT_THEME = "terminal";      // a phone with no stored look opens in Desk; a stored look is kept
+  const WEB_FONT = '"IBM Plex Mono"';    // the face of the four older looks; Desk uses system faces only
+  const FONT_WAIT_MS = 1500;
+  const COIN_PALETTES = {
+    dark: ["#d9534f", "#2fa36b", "#8a6fd0", "#c9a227", "#2aa3c4", "#d1478f", "#5a8f29", "#3f6fd8", "#d9822b", "#20a39e"],
+    read: ["#202020", "#4a4a4a", "#6a6a6a", "#8a8a8a", "#a5a5a5", "#353535", "#5a5a5a", "#7a7a7a", "#959595", "#b0b0b0"],
+    warm: ["#ff4a2a", "#ffc46b", "#ff7a3d", "#e0a040", "#ff9a6a", "#c2502a", "#ffd9a6", "#d96a1a", "#ffb03a", "#a8401f"],
+    mono: ["#ffffff", "#c8c8c8", "#9a9a9a", "#e4e4e4", "#b0b0b0", "#7c7c7c", "#f2f2f2", "#d6d6d6", "#a4a4a4", "#8a8a8a"],
+  };
+  const isDesk = () => state.theme === "terminal";
+  const AXIS_W = 62;                     // Desk: least width of the right-hand value axis, as on the desktop page (wider when a label needs it)
+  const hslHex = (h, s, l) => { const a = s * Math.min(l, 1 - l);
+    const f = (n) => { const k = (n + h / 30) % 12; return Math.round(255 * (l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1)))).toString(16).padStart(2, "0"); };
+    return `#${f(0)}${f(8)}${f(4)}`; };
+  /* Desk spreads coin hues round the wheel, as the desktop page does. The other looks keep their ten fixed colours. */
+  const coinColor = (i) => { if (isDesk()) return hslHex(Math.round(i * 137.5) % 360, 0.4, 0.6);
+    const pal = COIN_PALETTES[state.theme] || COIN_PALETTES.dark; return pal[i % pal.length]; };
+  const REFRESH_MS = { today: 60e3, d30: 300e3, all: 300e3, lob: 60e3 };
+  const midnight = () => { const d = new Date(); return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()); };
+  const VIEW_START = { today: () => midnight() - 60e3, d30: () => midnight() - 30 * LOB.DAY_MS, all: () => 0 };
+
+  const state = { master: null, tab: "today", busy: false, accounts: null, fills: new Map(), views: {}, books: null,
+                  daily: null, picked: null, loadedAt: {}, bar: "auto", theme: "dark",
+                  cache: { candles: new Map(), funding: new Map() } };
+  const charts = {};
+
+  const store = {
+    get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+    set(k, v) { try { localStorage.setItem(k, v); } catch { /* private mode: memory only */ } },
+    clear(k) { try { localStorage.removeItem(k); } catch { /* ignore */ } },
+  };
+
+  const usd = (x, dp = 0) => Number.isFinite(x) ? (x < 0 ? "−$" : "$") + Math.abs(x).toLocaleString("en-US", { minimumFractionDigits: dp, maximumFractionDigits: dp }) : "–";
+  const sUsd = (x, dp = 0) => Number.isFinite(x) ? (x > 0 ? "+" : "") + usd(x, dp) : "–";
+  const pct = (x, dp = 2) => Number.isFinite(x) ? (x > 0 ? "+" : x < 0 ? "−" : "") + Math.abs(x * 100).toFixed(dp) + "%" : "–";
+  const pp = (x, dp = 2) => pct(x / 100, dp);
+  const num = (x, dp = 2) => Number.isFinite(x) ? x.toFixed(dp) : "–";
+  const cls = (x) => (x > 0 ? "up" : x < 0 ? "down" : "");
+  const short = (d) => new Date(d + "T00:00:00Z").toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" });
+  const stampOf = (ms) => new Date(ms).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "UTC" }) + " UTC";
+  const clock = () => new Date().toISOString().slice(11, 16) + " UTC";
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  const svgEl = (tag, attrs, text) => {
+    const el = document.createElementNS("http://www.w3.org/2000/svg", tag);
+    for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+    if (text !== undefined) el.textContent = text;
+    return el;
+  };
+  /* Draw at the on-screen width so labels keep their real size on a phone. */
+  const fit = (svg, h) => { const w = Math.max(300, Math.round(svg.getBoundingClientRect().width || 600)); svg.setAttribute("viewBox", `0 0 ${w} ${h}`); return w; };
+  function niceTicks(lo, hi, count = 4) {
+    const span = hi - lo || Math.abs(hi) || 1;
+    const raw = span / count, mag = 10 ** Math.floor(Math.log10(raw));
+    const step = [1, 2, 2.5, 5, 10].map((m) => m * mag).find((s) => s >= raw);
+    const ticks = [];
+    for (let v = Math.ceil(lo / step) * step; v <= hi + 1e-9; v += step) ticks.push(+v.toFixed(10));
+    return ticks;
+  }
+
+  /* ---- zoomable charts (TradingView lightweight-charts) ---- */
+  function chartTheme() {
+    if (isDesk()) return {
+      layout: { background: { type: "solid", color: css("--bg") }, textColor: css("--axis"), fontFamily: css("--font-ui"), fontSize: 12 },
+      grid: { vertLines: { color: css("--grid") }, horzLines: { color: css("--grid") } },
+      rightPriceScale: { borderColor: css("--axis") },
+      crosshair: { vertLine: { color: css("--zero"), labelBackgroundColor: css("--warn-fill") }, horzLine: { color: css("--zero"), labelBackgroundColor: css("--warn-fill") } },
+    };
+    return {
+      layout: { background: { type: "solid", color: css("--panel") }, textColor: css("--muted"), fontFamily: "IBM Plex Mono, Menlo, monospace", fontSize: 11 },
+      grid: { vertLines: { color: css("--line") }, horzLines: { color: css("--line") } },
+      rightPriceScale: { borderColor: css("--line") },
+      crosshair: { vertLine: { color: css("--muted"), labelBackgroundColor: css("--ink2") }, horzLine: { color: css("--muted"), labelBackgroundColor: css("--ink2") } },
+    };
+  }
+  /** What Desk sets on a plot beyond colours: a dotted grid, a value axis of fixed least width with tick marks, white
+   *  axis lines, time labels in regular weight, a dashed crosshair. */
+  const deskChart = () => ({
+    grid: { vertLines: { style: 2 }, horzLines: { style: 2 } },
+    rightPriceScale: { minimumWidth: AXIS_W, ticksVisible: true },
+    timeScale: { borderColor: css("--axis"), ticksVisible: true, allowBoldLabels: false },
+    crosshair: { vertLine: { style: 2 }, horzLine: { style: 2 } },
+  });
+  /* A plot is built again when Desk is entered or left (see applyTheme). Which series were switched on waits here meanwhile. */
+  const carried = {};
+  /** Stroke of one line. Desk: the main line is 2px with its last value tagged on the axis; the rest are 1px in their own dash
+   *  (0 solid, 1 dotted, 2 dashed). The other looks: 1px, dashed or solid, no tag. */
+  const stroke = (l) => isDesk() ? { lineWidth: l.zeroLine ? 2 : 1, lineStyle: l.dash || 0, lastValueVisible: !!l.zeroLine }
+                                 : { lineWidth: 1, lineStyle: l.dashed ? 2 : 0, lastValueVisible: false };
+  const zeroStroke = () => isDesk() ? { color: css("--zero"), lineStyle: 0, lineWidth: 2 } : { color: css("--muted"), lineStyle: 2, lineWidth: 1 };
+  function getChart(key, unit) {
+    if (charts[key]) return charts[key];
+    if (typeof LightweightCharts === "undefined") throw new Error("Chart library did not load. Check the connection and pull again.");
+    const fmt = unit === "%" ? (v) => pp(v) : (v) => sUsd(v, Math.abs(v) < 100 ? 2 : 0);
+    const chart = LightweightCharts.createChart($(`ch-${key}`), {
+      autoSize: true, ...chartTheme(),
+      localization: { priceFormatter: fmt, timeFormatter: (t) => stampOf(t * 1000) },
+      timeScale: { borderColor: css("--line"), timeVisible: true, secondsVisible: false, rightOffset: 2 },
+      handleScroll: { vertTouchDrag: false, mouseWheel: true, pressedMouseMove: true, horzTouchDrag: true },
+      handleScale: { axisPressedMouseMove: true, mouseWheel: true, pinch: true },
+    });
+    const entry = { chart, series: new Map(), fmt, key, lastTime: null, desk: isDesk(), carried: carried[key] || null };
+    delete carried[key];
+    if (entry.desk) chart.applyOptions(deskChart());
+    chart.subscribeCrosshairMove((param) => readout(entry, param.time));
+    charts[key] = entry;
+    return entry;
+  }
+  function readout(entry, time) {
+    const pairs = [];
+    for (const [name, s] of entry.series) {
+      if (!s.visible || !s.data.length) continue;
+      const hit = time === undefined ? s.data[s.data.length - 1] : s.data.find((p) => p.time === time);
+      if (hit) pairs.push([name, entry.fmt(hit.value)]);
+    }
+    const t = time ?? entry.lastTime;
+    paintReadout($(`ro-${entry.key}`), t ? stampOf(t * 1000) : "", pairs);
+  }
+  /** A readout row: a time, then [name, value] pairs (a name may be empty), then a note. Desk prints the time and note
+   *  in grey, names in amber and values in white, and never breaks a pair across lines. */
+  function paintReadout(el, time, pairs, note = "") {
+    if (!isDesk()) { el.textContent = (time ? time + "  " : "") + pairs.map(([k, v]) => (k ? `${k} ${v}` : v)).join("  ") + (note ? "  " + note : ""); return; }
+    el.innerHTML = (time ? `<span class="p t">${esc(time)}</span> ` : "") +
+      pairs.map(([k, v]) => `<span class="p">${k ? `<span class="k">${esc(k)}</span> ` : ""}<span class="v">${esc(v)}</span></span>`).join(" ") +
+      (note ? ` <span class="u">${esc(note)}</span>` : "");
+  }
+  /** lines: [{name, color, values:[{time,value}], dashed, width, visible, zeroLine}] */
+  function drawChart(key, unit, lines, keepRange) {
+    const entry = getChart(key, unit);
+    const range = keepRange && !entry.carried ? entry.chart.timeScale().getVisibleLogicalRange() : null;   // a plot just built again is fitted afresh
+    const wanted = new Set(lines.map((l) => l.name));
+    for (const [name, s] of entry.series) if (!wanted.has(name)) { entry.chart.removeSeries(s.api); entry.series.delete(name); }
+    for (const l of lines) {
+      let s = entry.series.get(l.name);
+      if (!s) {
+        const api = entry.chart.addLineSeries({ color: l.color, ...stroke(l), priceLineVisible: false, crosshairMarkerRadius: 2 });
+        s = { api, visible: entry.carried?.shown.get(l.name) ?? (l.visible !== false) };
+        if (l.zeroLine) api.createPriceLine({ price: 0, ...zeroStroke(), axisLabelVisible: false });
+        entry.series.set(l.name, s);
+      }
+      s.data = l.values;
+      s.api.setData(l.values);
+      s.api.applyOptions({ visible: s.visible, color: l.color, ...stroke(l) });
+    }
+    entry.carried = null;
+    entry.lastTime = lines[0]?.values.at(-1)?.time ?? null;
+    if (range) entry.chart.timeScale().setVisibleLogicalRange(range); else entry.chart.timeScale().fitContent();
+    const box = $(`tg-${key}`);
+    box.innerHTML = lines.map((l, i) => `<label><input type="checkbox" data-i="${i}" ${entry.series.get(l.name).visible ? "checked" : ""}>
+      <i class="${isDesk() ? ["", "dot", "dash"][l.dash || 0] : l.dashed ? "dash" : ""}" style="border-color:${l.color}"></i><span>${esc(l.name)}</span></label>`).join("");
+    for (const input of box.querySelectorAll("input")) input.onchange = () => {
+      const s = entry.series.get(lines[+input.dataset.i].name);
+      s.visible = input.checked; s.api.applyOptions({ visible: s.visible }); readout(entry);
+    };
+    readout(entry);
+  }
+  const toSeries = (times, values) => {
+    const out = [];
+    for (let i = 0; i < times.length; i++) {
+      const time = Math.floor(times[i] / 1000);
+      if (out.length && out[out.length - 1].time === time) out[out.length - 1].value = values[i]; else out.push({ time, value: values[i] });
+    }
+    return out;
+  };
+
+  /* ---- data loading ---- */
+  async function ensureFills() {
+    for (const name of new Set(LOB.BOOKS.flatMap((b) => b.accounts))) {
+      const have = state.fills.get(name) || [];
+      const since = have.length ? have[have.length - 1].t : 0;
+      const fresh = await LOB.fetchFills(state.accounts.get(name).address, since);
+      const merged = new Map(have.map((f) => [f.tid, f]));
+      for (const f of fresh) merged.set(f.tid, f);
+      state.fills.set(name, [...merged.values()].sort((a, b) => a.t - b.t));
+    }
+  }
+  async function loadView(view) {
+    const now = Date.now();
+    const start = VIEW_START[view]();
+    const mids = await LOB.info({ type: "allMids" });
+    const books = [];
+    for (const b of LOB.BOOKS) books.push(await LOB.loadBookWindow(b, state.accounts, state.fills, start, now, state.bar, state.cache, mids));
+    const live = books.filter((b) => b.sum);
+    const bothFrom = Math.max(...live.map((b) => b.start));
+    return { view, now, books, combined: LOB.combine(live, bothFrom), bothFrom };
+  }
+  async function loadDaily() {
+    const legs = await Promise.all(LOB.BOOKS.map(async (b) => {
+      const port = Object.fromEntries(await LOB.info({ type: "portfolio", user: state.accounts.get(b.accounts[0]).address }));
+      return { name: b.label, daily: LOB.dailyReturns(port.allTime) };
+    }));
+    return { legs, book: LOB.combineDaily(legs.map((l) => l.daily)) };
+  }
+
+  /* ---- rendering ---- */
+  function tile(k, v, s, c = "") { return `<div class="tile"><div class="k">${k}</div><div class="v ${c}">${v}</div><div class="s">${s}</div></div>`; }
+
+  function renderPnl(keepRange) {
+    const v = state.views[state.tab];
+    if (!v) return;
+    const comb = v.combined;
+    const combNow = comb.combined.at(-1) ?? 0;
+    const label = { today: "Today", d30: "Last 30 days", all: "All history" }[state.tab];
+    $("windowLine").textContent = `${label}. ` + v.books.map((b) => `${b.label}: since ${stampOf(b.start)}, ${b.interval.name} bars`).join(" · ");
+    const sinceBoth = state.tab === "today" ? "" : `, since ${stampOf(v.bothFrom)}`;
+    $("combinedTitle").textContent = `Combined 50/50, % of capital${sinceBoth}`;
+    const last = (arr) => (arr && arr.length ? arr[arr.length - 1] : 0);
+    const ddOf = (b) => (b.sum ? LOB.maxDrawdown(b.sum.total.map((x) => x / b.capital * 100)) : 0);
+    const combDd = LOB.maxDrawdown(comb.combined);
+    const card = (b) => {
+      const s = b.sum || {};
+      const total = last(s.total);
+      return `<section class="panel bk"><h3>${esc(b.label)}</h3>
+        <div class="big ${cls(total)}">${sUsd(total, 2)}<small>${pp(total / b.capital * 100)}</small></div>
+        <dl class="kv"><dt>Price</dt><dd class="${cls(last(s.price))}">${sUsd(last(s.price), 2)}</dd>
+        <dt>Fees</dt><dd class="${cls(last(s.fees))}">${sUsd(last(s.fees), 2)}</dd>
+        <dt>Funding</dt><dd class="${cls(last(s.funding))}">${sUsd(last(s.funding), 2)}</dd>
+        <dt>Funding per day, run rate</dt><dd class="${cls(b.fundingPerDay)}">${sUsd(b.fundingPerDay, 2)}</dd>
+        <dt>Max DD, intraday</dt><dd class="${ddOf(b) < 0 ? "down" : ""}">${pct(ddOf(b))}</dd></dl>
+        <div class="foot">since ${stampOf(b.start)}<br>equity ${usd(b.equity, 2)} · gross ${usd(b.grossNow)} · ${b.npos} positions</div></section>`;
+    };
+    const combUsd = v.books.reduce((s, b, i) => s + last(comb.books[i]) / 100 * b.capital, 0);
+    $("bookCards").innerHTML = `<section class="panel bk"><h3>Combined 50/50</h3>
+        <div class="big ${cls(combNow)}">${pp(combNow)}<small>${sUsd(combUsd, 2)}</small></div>
+        <dl class="kv">${v.books.map((b, i) => `<dt>${esc(b.label)}</dt><dd class="${cls(last(comb.books[i]))}">${pp(last(comb.books[i]))}</dd>`).join("")}
+        <dt>Max DD, intraday</dt><dd class="${combDd < 0 ? "down" : ""}">${pct(combDd)}</dd></dl>
+        <div class="foot">equal weight of each book's % P&amp;L, after fees and funding${state.tab === "today" ? "" : `<br>since both live, ${stampOf(v.bothFrom)}`}</div></section>` +
+      v.books.map(card).join("");
+
+    const [em, bp] = v.books;
+    drawChart("combined", "%", [
+      { name: "Combined 50/50", color: css("--book"), width: 2.4, values: toSeries(comb.times, comb.combined), zeroLine: true },
+      { name: em.label, color: css("--leg1"), width: 1.5, values: toSeries(comb.times, comb.books[0] || []), visible: false, dash: 2 },
+      { name: bp.label, color: css("--leg2"), width: 1.5, values: toSeries(comb.times, comb.books[1] || []), visible: false, dash: 1 },
+    ], keepRange);
+
+    // Desk: Total white, legs in one grey and fees and funding in another, each pair told apart by dash; BTC and PAXG as on the combined plot.
+    const desk = isDesk();
+    const bookLines = (b, coinsVisible) => {
+      const s = b.sum;
+      if (!s) return [];
+      const lines = [{ name: "Total", color: css("--book"), width: 2.4, values: toSeries(s.times, s.total), zeroLine: true }];
+      if (b.key === "emissions") {
+        lines.push({ name: "Long leg", color: css(desk ? "--s4" : "--up"), width: 1.5, values: toSeries(s.times, s.longs), visible: false });
+        lines.push({ name: "Short leg", color: css(desk ? "--s4" : "--down"), width: 1.5, values: toSeries(s.times, s.shorts), visible: false, dash: 2 });
+      }
+      lines.push({ name: "Fees", color: css(desk ? "--s5" : "--muted"), width: 1.2, dashed: true, values: toSeries(s.times, s.fees) });
+      lines.push({ name: "Funding", color: css("--fund"), width: 1.2, dashed: true, values: toSeries(s.times, s.funding), dash: 2 });
+      const coins = [...s.perCoin.entries()].sort((a, c) => Math.abs(c[1].at(-1)) - Math.abs(a[1].at(-1)));
+      coins.forEach(([coin, cum], i) => lines.push({
+        name: coin, width: 1.4, values: toSeries(s.times, Array.from(cum)), visible: coinsVisible,
+        color: coin === "BTC" ? css("--leg1") : coin === "PAXG" ? css("--leg2") : coinColor(i), dash: coin === "BTC" ? 2 : coin === "PAXG" ? 1 : 0 }));
+      return lines;
+    };
+    drawChart("emissions", "$", bookLines(em, false), keepRange);
+    drawChart("btcpaxg", "$", bookLines(bp, true), keepRange);
+
+    $("posSection").hidden = state.tab !== "today";
+    if (state.tab === "today") renderPositions();
+    $("dailySection").hidden = state.tab !== "all" || !state.daily;
+    if (state.tab === "all" && state.daily) renderDaily();
+  }
+
+  /** Table markup from column definitions [head, cell(row)], printed in the given column order. */
+  const tableOf = (cols, order, rows, open = () => "<tr>") =>
+    `<thead><tr>${order.map((i) => `<th>${cols[i][0]}</th>`).join("")}</tr></thead><tbody>` +
+    rows.map((r) => open(r) + order.map((i) => cols[i][1](r)).join("") + "</tr>").join("") + "</tbody>";
+
+  function renderPositions() {
+    const rows = LOB.BOOKS.flatMap((b) => b.accounts.flatMap((a) => LOB.positions(state.accounts.get(a).state).map((p) => ({ ...p, leg: b.label }))));
+    const cols = [
+      ["Coin", (p) => `<td>${esc(p.coin)}</td>`],
+      ["Book", (p) => `<td style="font-family:var(--sans);color:var(--ink2)">${esc(p.leg)}</td>`],
+      ["Side", (p) => `<td><span class="pill ${p.size > 0 ? "up" : "down"}">${p.size > 0 ? "long" : "short"}</span></td>`],
+      ["Notional", (p) => `<td>${usd(Math.abs(p.notional))}</td>`],
+      ["Weight", (p) => `<td>${pct(p.weight, 1)}</td>`],
+      ["uPnL", (p) => `<td class="${cls(p.upnl)}">${sUsd(p.upnl, 2)}</td>`],
+      ["Funding", (p) => `<td class="${cls(p.funding)}">${sUsd(p.funding, 2)}</td>`],
+    ];
+    // Desk leads with what a phone can show without scrolling: side, size and P&L. The book name goes last.
+    $("posTable").innerHTML = tableOf(cols, isDesk() ? [0, 2, 3, 5, 4, 6, 1] : [0, 1, 2, 3, 4, 5, 6], rows);
+  }
+
+  function renderDaily() {
+    const { legs, book } = state.daily;
+    const st = LOB.stats(book);
+    $("dailyTiles").innerHTML =
+      tile("Since both live", pct(st.cum), `${sUsd(st.pnl)} · ${st.n} days`, cls(st.cum)) +
+      tile("Sharpe", num(st.sharpe), `${st.n} days · ×√365`) +
+      tile("Max DD, daily closes", pct(st.maxDd), `worst day ${st.worst ? pct(st.worst.ret) : "–"}`, st.maxDd < 0 ? "down" : "") +
+      tile("Red days", `${st.red}/${st.n}`, st.lastRed ? `last ${short(st.lastRed.date)} ${pct(st.lastRed.ret)}` : `none · ${st.greenStreak} green in a row`);
+    barChart($("dayChart"), $("dayReadout"), book);
+    const maps = legs.map((l) => new Map(l.daily.map((r) => [r.date, r])));
+    $("dailyTable").innerHTML = `<thead><tr><th>Day</th>${legs.map((l) => `<th>${esc(l.name)}</th>`).join("")}<th>Book</th><th>Book $</th></tr></thead><tbody>` +
+      [...book].reverse().map((r) => `<tr><td>${short(r.date)}</td>${maps.map((m) => `<td class="${cls(m.get(r.date)?.ret)}">${pct(m.get(r.date)?.ret)}</td>`).join("")}
+        <td class="${cls(r.ret)}">${pct(r.ret)}</td><td class="${cls(r.pnl)}">${sUsd(r.pnl)}</td></tr>`).join("") + "</tbody>";
+  }
+
+  /* ---- Desk furniture for the two hand-drawn plots: value axis on the right, dotted grid, solid zero line, axis tags ---- */
+  const CRISP = { "shape-rendering": "crispEdges" };
+  /** One value tick: a dotted grid line (solid and heavier at zero), a tick mark and its label on the right-hand axis. */
+  function deskTick(svg, x0, x1, y, label, zero) {
+    svg.append(svgEl("line", { x1: x0, x2: x1, y1: y, y2: y, stroke: zero ? "var(--zero)" : "var(--grid)", "stroke-width": zero ? 2 : 1,
+                               "stroke-dasharray": zero ? "none" : "2 3", ...CRISP }));
+    svg.append(svgEl("line", { x1, x2: x1 + 4, y1: y, y2: y, stroke: "var(--axis)", ...CRISP }));
+    svg.append(svgEl("text", { x: x1 + 7, y: y + 4 }, label));
+  }
+  /** The axis lines: the right edge and the foot of the plot. */
+  const deskAxes = (svg, x0, x1, y0, y1) => svg.append(svgEl("path", { d: `M${x1},${y0}V${y1}H${x0}`, fill: "none", stroke: "var(--axis)", ...CRISP }));
+  /** A pointer-shaped tag on the right-hand axis with dark text: white for a last value, yellow for the crosshair. */
+  function deskTag(parent, x, y, label, fill = "#fff") {
+    parent.append(svgEl("path", { d: `M${x},${y}l6,-8h${AXIS_W - 9}v16h${9 - AXIS_W}z`, fill }));
+    parent.append(svgEl("text", { x: x + 9, y: y + 4, class: "tag" }, label));
+  }
+  /** Crosshair: dashed lines across the plot, the value in a yellow tag on the axis and the date in one at the foot. */
+  function deskCross(g, cx, cy, [x0, x1, y0, y1], value, when) {
+    const dash = { stroke: "var(--zero)", "stroke-dasharray": "3 3", ...CRISP };
+    g.replaceChildren(svgEl("line", { x1: cx, x2: cx, y1: y0, y2: y1, ...dash }), svgEl("line", { x1: x0, x2: x1, y1: cy, y2: cy, ...dash }));
+    deskTag(g, x1 + 1, cy, value, "var(--warn-fill)");
+    const w = when.length * 7 + 10, left = Math.max(x0, Math.min(x1 - w, cx - w / 2));
+    g.append(svgEl("rect", { x: left, y: y1 + 3, width: w, height: 16, fill: "var(--warn-fill)" }));
+    g.append(svgEl("text", { x: left + w / 2, y: y1 + 15, "text-anchor": "middle", class: "tag" }, when));
+  }
+
+  function barChart(svg, out, rows) {
+    svg.replaceChildren();
+    svg.ontouchstart = svg.ontouchmove = svg.onmousemove = null;
+    const desk = isDesk();
+    const H = 160, W = fit(svg, H), L = desk ? 8 : 52, R = desk ? AXIS_W : 12, T = 10, B = 24;
+    if (!rows.length) return;
+    const vals = rows.map((r) => r.ret * 100);
+    const ticks = niceTicks(Math.min(0, ...vals), Math.max(0, ...vals), 3);
+    const lo = Math.min(ticks[0], ...vals), hi = Math.max(ticks[ticks.length - 1], ...vals);
+    const Y = (v) => T + (H - T - B) * (1 - (v - lo) / (hi - lo || 1));
+    const slot = (W - L - R) / rows.length, bw = Math.max(2, Math.min(28, slot - 2));
+    for (const t of ticks) {
+      if (desk) { if (t !== 0) deskTick(svg, L, W - R, Y(t), pp(t, 1), false); continue; }
+      svg.append(svgEl("line", { x1: L, x2: W - R, y1: Y(t), y2: Y(t), stroke: "var(--line)" }));
+      svg.append(svgEl("text", { x: L - 6, y: Y(t) + 3, "text-anchor": "end" }, t.toFixed(1) + "%"));
+    }
+    const cross = svgEl("g", { "pointer-events": "none" });
+    const show = (i) => {
+      const r = rows[i];
+      paintReadout(out, short(r.date), [["", pct(r.ret)], ["", sUsd(r.pnl)]]);
+      if (desk) deskCross(cross, L + slot * (i + 0.5), Y(vals[i]), [L, W - R, T, H - B], pct(r.ret), short(r.date));
+    };
+    rows.forEach((r, i) => {
+      const v = vals[i], x = L + slot * i + (slot - bw) / 2;
+      svg.append(svgEl("rect", { x, y: Math.min(Y(v), Y(0)), width: bw, height: Math.max(1, Math.abs(Y(v) - Y(0))), rx: desk ? 0 : 2, fill: v >= 0 ? "var(--up)" : "var(--down)" }));
+      const hit = svgEl("rect", { x: L + slot * i, y: T, width: slot, height: H - T - B, fill: "transparent" });
+      const pick = () => show(i);
+      hit.addEventListener("mouseenter", pick); hit.addEventListener("touchstart", pick, { passive: true });
+      svg.append(hit);
+    });
+    const lastI = rows.length - 1, lastRow = rows[lastI];
+    // Dates along the foot. Desk prints one per 64px at most and never one that would run into the last.
+    const step = Math.max(1, Math.ceil(rows.length / (desk ? Math.max(1, Math.floor((W - L - R) / 64)) : 6)));
+    rows.forEach((r, i) => {
+      if (!(i % step === 0 || i === lastI)) return;
+      if (!desk) { svg.append(svgEl("text", { x: L + slot * (i + 0.5), y: H - 6, "text-anchor": "middle" }, short(r.date))); return; }
+      if (i !== lastI && (lastI - i) * slot < 56) return;
+      svg.append(svgEl("text", i === lastI ? { x: W - R, y: H - 6, "text-anchor": "end" } : i === 0 ? { x: L, y: H - 6 } : { x: L + slot * (i + 0.5), y: H - 6, "text-anchor": "middle" }, short(r.date)));
+    });
+    if (desk) {
+      deskTick(svg, L, W - R, Y(0), pp(0, 1), true);
+      deskAxes(svg, L, W - R, T, H - B);
+      deskTag(svg, W - R + 1, Y(vals[lastI]), pct(lastRow.ret));
+      svg.append(cross);
+      // Touch crosshair: slide a finger along the plot, the readout and the tags follow the nearest day.
+      svg.ontouchstart = svg.ontouchmove = svg.onmousemove = (ev) => {
+        const p = ev.touches ? ev.touches[0] : ev, box = svg.getBoundingClientRect();
+        show(Math.max(0, Math.min(lastI, Math.floor(((p.clientX - box.left) * W / box.width - L) / slot))));
+      };
+    }
+    paintReadout(out, short(lastRow.date), [["", pct(lastRow.ret)], ["", sUsd(lastRow.pnl)]], "(today, partial)");
+  }
+
+  function renderLob() {
+    const books = (state.books || []).filter((b) => Number.isFinite(b.mid));
+    if (!books.length) return;
+    const sorted = [...books].sort((a, b) => b.ratio50 - a.ratio50);
+    const worst = sorted[0];
+    const medSpread = [...books].map((b) => b.spreadBp).sort((a, b) => a - b)[Math.floor(books.length / 2)];
+    const thin = books.filter((b) => b.ratio50 > 0.25).length;
+    $("lobTiles").innerHTML =
+      tile("Names", `${books.length}`, "held now") +
+      tile("Median spread", `${num(medSpread, 1)} bp`, "top of book") +
+      tile("Tightest exit", esc(worst.coin), `size ${num(worst.ratio50 * 100, 0)}% of 50bp depth`, worst.ratio50 > 0.25 ? "down alarm" : "") +
+      tile("Over 25%", `${thin}`, "names where size > 25% of 50bp depth", thin ? "down alarm" : "");
+    const cols = [
+      ["Coin", (b) => `<td>${esc(b.coin)}</td>`],
+      ["Ours", (b) => `<td class="${cls(b.notional)}">${sUsd(b.notional)}</td>`],
+      ["Spread", (b) => `<td>${num(b.spreadBp, 1)} bp</td>`],
+      ["±10bp", (b) => `<td>${usd(Math.min(b.bands[10].bid, b.bands[10].ask))}</td>`],
+      ["±50bp exit", (b) => `<td>${usd(b.bands[50][b.exit])}</td>`],
+      ["±100bp exit", (b) => `<td>${usd(b.bands[100][b.exit])}</td>`],
+      ["Size / depth", (b) => `<td class="${b.ratio50 > 0.25 ? "down alarm" : ""}">${num(b.ratio50 * 100, 1)}%</td>`],
+    ];
+    // Desk puts the risk figure beside the name, so it shows without scrolling, and marks the row whose ladder is drawn.
+    const marked = state.picked || (isDesk() ? worst.coin : null);
+    $("lobTable").innerHTML = tableOf(cols, isDesk() ? [0, 6, 1, 2, 3, 4, 5] : [0, 1, 2, 3, 4, 5, 6], sorted,
+                                      (b) => `<tr class="pick${marked === b.coin ? " sel" : ""}" data-coin="${esc(b.coin)}">`);
+    for (const tr of $("lobTable").querySelectorAll("tr.pick")) tr.onclick = () => { state.picked = tr.dataset.coin; renderLob(); };
+    renderLadder(books.find((b) => b.coin === state.picked) || worst);
+  }
+
+  function renderLadder(b) {
+    const svg = $("ladderChart");
+    svg.replaceChildren();
+    $("ladderTitle").textContent = `Ladder · ${b.coin}`;
+    const desk = isDesk();
+    const H = 220, W = fit(svg, H), L = desk ? 8 : 56, R = desk ? AXIS_W : 12, T = 10, B = 24, BAND = 100;
+    const X = (bp) => L + (W - L - R) * (bp + BAND) / (2 * BAND);
+    const cum = (side, dir) => {
+      let c = 0; const pts = [];
+      for (const l of side) { const bp = (l.px / b.mid - 1) * 1e4; if (Math.abs(bp) > BAND) break; c += l.px * l.sz; pts.push({ bp, c }); }
+      if (pts.length) pts.push({ bp: dir * BAND, c });
+      return pts;
+    };
+    const bids = cum(b.bids, -1), asks = cum(b.asks, 1);
+    const top = Math.max(1, ...bids.map((p) => p.c), ...asks.map((p) => p.c), Math.abs(b.notional));
+    const ticks = niceTicks(0, top, 4);
+    const ymax = Math.max(top, ticks[ticks.length - 1]);
+    const Y = (v) => T + (H - T - B) * (1 - v / ymax);
+    const money = (v) => (v >= 1000 ? `$${(v / 1000).toFixed(v >= 1e5 ? 0 : 1)}k` : `$${v}`);
+    for (const t of ticks) {
+      if (desk) { deskTick(svg, L, W - R, Y(t), money(t), t === 0); continue; }
+      svg.append(svgEl("line", { x1: L, x2: W - R, y1: Y(t), y2: Y(t), stroke: "var(--line)" }));
+      svg.append(svgEl("text", { x: L - 6, y: Y(t) + 3, "text-anchor": "end" }, money(t)));
+    }
+    for (const bp of [-100, -50, 0, 50, 100]) {
+      if (desk && Math.abs(bp) < BAND) svg.append(svgEl("line", { x1: X(bp), x2: X(bp), y1: T, y2: H - B, stroke: "var(--grid)", "stroke-dasharray": "2 3", ...CRISP }));
+      svg.append(svgEl("text", { x: X(bp), y: H - 6, "text-anchor": bp === -100 ? "start" : bp === 100 ? "end" : "middle" },
+                       desk ? `${bp > 0 ? "+" : bp < 0 ? "−" : ""}${Math.abs(bp)}bp` : `${bp > 0 ? "+" : ""}${bp}bp`));
+    }
+    const step = (pts, color, dashed) => {
+      if (!pts.length) return;
+      let d = `M${X(0).toFixed(1)},${Y(0).toFixed(1)}`, prevC = 0;
+      for (const p of pts) { d += `L${X(p.bp).toFixed(1)},${Y(prevC).toFixed(1)}L${X(p.bp).toFixed(1)},${Y(p.c).toFixed(1)}`; prevC = p.c; }
+      svg.append(svgEl("path", { d: d + `L${X(pts[pts.length - 1].bp).toFixed(1)},${Y(0).toFixed(1)}Z`, fill: color, "fill-opacity": 0.14, stroke: "none" }));
+      svg.append(svgEl("path", { d, fill: "none", stroke: color, "stroke-width": 2, ...(dashed ? { "stroke-dasharray": "6 3" } : {}) }));
+    };
+    // Desk tells the sides apart by stroke as well as place: bids solid, asks dashed, our size dotted.
+    step(bids, "var(--bid)", false); step(asks, "var(--ask)", desk);
+    if (b.notional) svg.append(svgEl("line", { x1: L, x2: W - R, y1: Y(Math.abs(b.notional)), y2: Y(Math.abs(b.notional)), stroke: "var(--accent)", "stroke-width": 1.6, "stroke-dasharray": desk ? "2 3" : "5 4" }));
+    if (desk) deskAxes(svg, L, W - R, T, H - B);
+    paintReadout($("ladderReadout"), "", [["mid", b.mid.toPrecision(6)], ["spread", `${num(b.spreadBp, 1)}bp`], ["ours", sUsd(b.notional)], ["exit via", `${b.exit}s`]]);
+  }
+
+  /* ---- Flow tab: live BTC order flow (flow.js). Mounted on first open; the engine runs only while it is shown. ---- */
+  const query = new URLSearchParams(location.search);
+  const flow = { ui: null, life: null, fixture: null, sim: query.get("sim") === "1" };
+  window.__flow = flow;   // debug handle: __flow.life.engine.state(), __flow.life.stats() (socket counts)
+  async function openFlow() {
+    if (!flow.ui) {
+      if (typeof FlowUI === "undefined" || typeof FlowEngine === "undefined") { $("err").textContent = "Flow scripts did not load. Reload the page."; return; }
+      if (flow.sim && !flow.fixture) {
+        try { flow.fixture = await (await fetch("fixture.json")).json(); }
+        catch (e) { $("err").textContent = `Replay fixture did not load: ${e.message}`; return; }
+        if (state.tab !== "flow" || flow.ui) return;
+      }
+      flow.life = new FlowLife({ makeEngine: flow.sim ? () => new FlowSim(flow.fixture) : () => FlowEngine.createEngine({ phone: true, proxyBase: null }) });
+      flow.life.setPage(!document.hidden);
+      flow.ui = FlowUI.mount($("view-flow"), flow.life, { theme: state.theme, offVenues: flow.sim ? [] : ["KuCoin"],
+                                                          footer: flow.sim ? "Replay of a recorded 20 minute session. " : "" });
+    }
+    if (state.tab !== "flow") return;
+    flow.ui.setActive(true);
+    flow.life.setTab(true);
+  }
+  function closeFlow() {
+    if (!flow.ui) return;
+    flow.ui.setActive(false);
+    flow.life.setTab(false);
+  }
+
+  function show(tab) {
+    state.tab = tab;
+    store.set(TAB_KEY, tab);
+    for (const btn of $("tabList").querySelectorAll("button")) btn.setAttribute("aria-selected", String(btn.dataset.tab === tab));
+    const isFlow = tab === "flow";
+    $("view-flow").hidden = !isFlow;
+    $("stamp").hidden = isFlow; $("refresh").hidden = isFlow;   // P&L load stamp and pull button: not used by Flow
+    if (isFlow) {
+      for (const id of ["barRow", "view-pnl", "view-lob", "loading", "setup"]) $(id).hidden = true;
+      openFlow();
+      return;
+    }
+    closeFlow();
+    if (!state.master) { showSetup(); return; }
+    $("setup").hidden = true;
+    const isPnl = tab !== "lob";
+    $("barRow").hidden = !isPnl;
+    const ready = isPnl ? !!state.views[tab] : !!state.books;
+    $("view-pnl").hidden = !isPnl || !ready;
+    $("view-lob").hidden = isPnl || !ready;
+    $("loading").hidden = ready;
+    if (ready) { if (isPnl) renderPnl(false); else renderLob(); }
+  }
+
+  async function refresh(force = false) {
+    if (!state.master || state.busy || state.tab === "flow") return;
+    const tab = state.tab;
+    if (!force && state.loadedAt[tab] && Date.now() - state.loadedAt[tab] < REFRESH_MS[tab] - 1000) return;
+    state.busy = true;
+    $("refresh").innerHTML = '<span class="spin">↻</span>';
+    $("err").textContent = "";
+    $("tabs").hidden = false;
+    const hadData = tab === "lob" ? !!state.books : !!state.views[tab];
+    try {
+      state.accounts = await LOB.loadAccounts(state.master);
+      if (tab === "lob") {
+        const notionals = {};
+        for (const b of LOB.BOOKS) for (const a of b.accounts) for (const p of LOB.positions(state.accounts.get(a).state)) notionals[p.coin] = (notionals[p.coin] || 0) + p.notional;
+        state.books = await LOB.loadBooks(Object.keys(notionals).sort(), notionals);
+      } else {
+        await ensureFills();
+        state.views[tab] = await loadView(tab);
+        if (tab === "all") state.daily = await loadDaily();
+      }
+      state.loadedAt[tab] = Date.now();
+      $("stamp").textContent = clock();
+      $("live").hidden = false;
+      if (state.tab === tab) {
+        if (hadData && tab !== "lob") renderPnl(true);
+        else if (hadData) renderLob();
+        else show(tab);
+      }
+    } catch (e) {
+      $("err").textContent = `${e.message} Pull again with ↻.`;
+    } finally {
+      state.busy = false;
+      $("refresh").textContent = "↻";
+    }
+  }
+
+  function showSetup(message = "") {
+    $("setup").hidden = false; $("view-pnl").hidden = true; $("view-lob").hidden = true; $("loading").hidden = true; $("barRow").hidden = true;
+    $("setupErr").textContent = message;
+  }
+
+  $("save").onclick = () => {
+    const v = $("addr").value.trim();
+    if (!LOB.isAddress(v)) { $("setupErr").textContent = "That is not a 0x address with 40 hex characters."; return; }
+    store.set(KEY, v); state.master = v; $("setup").hidden = true; show(state.tab); refresh(true);
+  };
+  $("forget").onclick = () => { store.clear(KEY); state.master = null; state.views = {}; state.books = null; state.fills = new Map(); state.loadedAt = {}; state.cache = { candles: new Map(), funding: new Map() }; $("addr").value = ""; showSetup(); };
+  $("refresh").onclick = () => refresh(true);
+  const paintBars = () => { for (const b of $("barSeg").querySelectorAll("button")) b.setAttribute("aria-pressed", String(b.dataset.bar === state.bar)); };
+  for (const btn of $("barSeg").querySelectorAll("button")) btn.onclick = () => {
+    state.bar = btn.dataset.bar; store.set(BAR_KEY, state.bar); paintBars();
+    state.views = {}; state.loadedAt = {}; show(state.tab); refresh(true);
+  };
+  function applyTheme() {
+    document.documentElement.setAttribute("data-theme", state.theme);
+    for (const b of document.querySelectorAll("[data-theme-pick]")) b.setAttribute("aria-pressed", String(b.dataset.themePick === state.theme));
+    // Two labels read differently in Desk (mixed case, a shorter tab name). Only the text node changes.
+    for (const el of document.querySelectorAll("[data-desk]")) el.lastChild.nodeValue = isDesk() ? el.dataset.desk : el.dataset.classic;
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute("content", css("--bg"));
+    let rebuilt = false;
+    for (const [key, c] of Object.entries(charts)) {
+      if (c.desk === isDesk()) { c.chart.applyOptions(chartTheme()); continue; }
+      // Entering or leaving Desk changes type size and the width of the value axis, so the plot is built again and fitted
+      // afresh, exactly as on a fresh load. Which series were switched on is carried over; a zoom is not.
+      carried[key] = { shown: new Map([...c.series].map(([name, s]) => [name, s.visible])) };
+      c.chart.remove();
+      delete charts[key];
+      rebuilt = true;
+    }
+    const redraw = () => {
+      if (state.tab !== "lob" && state.views[state.tab]) renderPnl(true);
+      if (state.tab === "lob" && state.books) renderLob();
+    };
+    // Desk never asks for the web font the other looks draw their plots in. Leaving Desk, wait for it (briefly) before the
+    // plots are built again: the library measures a label's place once, and in the fallback face it lands a fraction of a pixel off.
+    if (rebuilt && !isDesk() && document.fonts) {
+      Promise.race([document.fonts.load(`11px ${WEB_FONT}`), new Promise((done) => setTimeout(done, FONT_WAIT_MS))]).then(redraw, redraw);
+    } else redraw();
+    if (flow.ui) flow.ui.setTheme(state.theme);
+  }
+  for (const b of document.querySelectorAll("[data-theme-pick]")) b.onclick = () => {
+    state.theme = b.dataset.themePick; store.set(THEME_KEY, state.theme); applyTheme();
+  };
+  for (const btn of $("tabList").querySelectorAll("button")) btn.onclick = () => { show(btn.dataset.tab); refresh(); scrollTo(0, 0); };
+  // A Flow sheet dims the page behind it, and in the older looks that dim layer lies over the tabs. A tap on a tab through
+  // it still changes tab, so one tap leaves Flow in every look. (In Desk the tab bar sits above the dim layer.)
+  $("view-flow").addEventListener("click", (e) => {
+    if (!e.target.classList.contains("scrim")) return;
+    const under = (b) => { const r = b.getBoundingClientRect(); return e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom; };
+    const tab = [...$("tabList").querySelectorAll("button")].find(under);
+    if (tab) tab.click();
+  });
+  for (const btn of document.querySelectorAll("[data-fit]")) btn.onclick = () => charts[btn.dataset.fit]?.chart.timeScale().fitContent();
+  document.addEventListener("visibilitychange", () => {
+    if (flow.life) flow.life.setPage(!document.hidden);
+    if (!document.hidden) refresh();
+  });
+  setInterval(() => { if (!document.hidden) refresh(); }, 15000);
+
+  const savedBar = store.get(BAR_KEY);
+  if (savedBar && ["auto", "1m", "5m", "15m", "1h"].includes(savedBar)) state.bar = savedBar;
+  paintBars();
+  const savedTheme = store.get(THEME_KEY);
+  state.theme = savedTheme && THEMES[savedTheme] ? savedTheme : DEFAULT_THEME;
+  applyTheme();
+  const savedTab = store.get(TAB_KEY);
+  if (savedTab && (REFRESH_MS[savedTab] || savedTab === "flow")) state.tab = savedTab;
+  if (query.get("tab") && (REFRESH_MS[query.get("tab")] || query.get("tab") === "flow")) state.tab = query.get("tab");
+  const saved = store.get(KEY);
+  if (saved && LOB.isAddress(saved)) state.master = saved;
+  $("tabs").hidden = false;
+  show(state.tab);
+  if (state.master) refresh(true);
+})();
+</script>
+</body>
+</html>
