@@ -3,8 +3,8 @@
    Colours are not set here: FlowUI writes them on the .flow element from FlowShared.Tokens.
    Class names that clash with index.html (.live .seg .tile .kv .legend .readout .note .pill) carry an f prefix. */
 .flow {
-  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
-  --sans: "IBM Plex Sans", -apple-system, system-ui, sans-serif;
+  --mono: ui-monospace, Menlo, monospace;
+  --sans: -apple-system, system-ui, sans-serif;
   --sat: env(safe-area-inset-top, 0px); --sab: env(safe-area-inset-bottom, 0px);
   --gut: 12px; --dock-h: 52px;
   background: var(--bg); color: var(--ink); font: 13px/1.45 var(--mono); font-variant-numeric: tabular-nums;
@@ -264,17 +264,6 @@
 .flow .sheet .fkv { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; font-size: 13px; margin: 8px 0; }
 .flow .sheet .fkv dt { color: var(--muted); } .flow .sheet .fkv dd { margin: 0; text-align: right; }
 
-/* Mono (tokens from FlowShared "mono", noHue): pure terminal. Black, white, greys; verdict and alerts in inverse video, sells hatched grey and italic. */
-:root[data-theme="mono"] .flow .verdict, :root[data-theme="mono"] .flow .verdict.buy, :root[data-theme="mono"] .flow .verdict.sell { background: var(--ink); color: var(--bg); border-color: var(--ink); }
-:root[data-theme="mono"] .flow .verdict.even { background: none; color: var(--ink); }
-:root[data-theme="mono"] .flow .hero.quiet .verdict { background: none; color: var(--ink); }
-:root[data-theme="mono"] .flow .pr.big.buy, :root[data-theme="mono"] .flow .pr.big.sell { background: #141414; }
-:root[data-theme="mono"] .flow .pr.big.sell { box-shadow: inset 3px 0 0 var(--sell); }
-:root[data-theme="mono"] .flow .card, :root[data-theme="mono"] .flow .hbtn { border-color: #3a3a3a; }
-:root[data-theme="mono"] .flow .hd { background: #0d0d0d; }
-:root[data-theme="mono"] .flow .banner { background: #000; }
-:root[data-theme="mono"] .flow .heat.hot { background: none; color: var(--ink); border: 1.5px solid var(--ink); font-weight: 700; }
-:root[data-theme="mono"] .flow .flegend i.o { border-style: dotted; }
 
 /* ===== Loading skeleton ===== */
 .flow .sk { background: var(--line); border-radius: 2px; color: transparent !important; }
@@ -283,9 +272,11 @@
 @media (prefers-reduced-motion: reduce) { .flow *, .flow *::before, .flow *::after { transition: none !important; } }
 .flow .ffoot { padding: 4px 0 0; font: 12px/1.5 var(--sans); color: var(--muted); }
 
-/* ===== Desk (the page's terminal look: <html data-theme="terminal">) =====
-   Colours come from FlowShared "desk"; type sizes, bar greys and the steel blue are the page's own Desk variables,
-   inherited from :root. The rules are the P&L tabs' rules:
+/* ===== Desk (the page's one UI: <html data-theme="terminal">) =====
+   The rules above are the older layout's; these sit on top of them and still lean on them, so both stay.
+   Colours come from the skin's entry in FlowShared (desk, day, mono, read, warm); type sizes, bar fills and the colour of
+   the segment that is on are the page's own tokens, inherited from :root. The colour words below are Desk's; a skin keeps
+   each meaning in its own colours. The rules are the P&L tabs' rules:
      amber = a label or a name      white = a value or a title      grey = a unit, a time, a count beside a value
      green / red = up / down, and always with a sign or an arrow    steel blue = the segment that is on
      yellow fill = needs a look     red fill = an alarm
@@ -301,7 +292,7 @@
 [data-theme="terminal"] .flow button:focus-visible { outline-color: var(--focus); }
 [data-theme="terminal"] .flow .sub { color: var(--muted); font-size: var(--t-micro); }
 [data-theme="terminal"] .flow .fnote { margin: 8px 0 0; color: var(--ink2); font: 400 13px/18px var(--font-ui); }
-[data-theme="terminal"] .flow .model { padding: 0 5px; background: var(--warn-fill); color: #000; font: 700 12px/16px var(--font-ui); white-space: nowrap; }     /* needs a look: a yellow chip. Yellow is never text. */
+[data-theme="terminal"] .flow .model { padding: 0 5px; background: var(--warn-fill); color: var(--on-warn); font: 700 12px/16px var(--font-ui); white-space: nowrap; }     /* needs a look: a yellow chip. Yellow is never text. */
 [data-theme="terminal"] .flow .sk { background: var(--bar2); }
 [data-theme="terminal"] .flow .ffoot { padding: 4px; color: var(--muted); font: 400 var(--t-micro)/16px var(--font-ui); }
 
@@ -313,24 +304,24 @@
 [data-theme="terminal"] .flow .dock .jump::before { content: "Go to"; }
 [data-theme="terminal"] .flow .dock .win::before, [data-theme="terminal"] .flow .dock .jump::before { flex: none; width: 52px; color: var(--amber); font-size: var(--t-label); }
 [data-theme="terminal"] .flow .dock .win button, [data-theme="terminal"] .flow .dock .jump button { flex: 1 1 0; flex-direction: row; min-width: var(--tap); height: var(--tap);
-  padding: 0 4px; border: 0; background: #1E1E1E; color: #F0F0F0; font: 700 var(--t-label)/18px var(--font-ui); }
-[data-theme="terminal"] .flow .dock .win button[aria-pressed="true"] { background: var(--seg-on); color: #fff; }
+  padding: 0 4px; border: 0; background: var(--seg); color: var(--on-seg); font: 700 var(--t-label)/18px var(--font-ui); }
+[data-theme="terminal"] .flow .dock .win button[aria-pressed="true"] { background: var(--seg-on); color: var(--on-seg-on); }
 [data-theme="terminal"] .flow .dock .jump button { border: 1px solid var(--line-strong); background: var(--bar); color: var(--ink); }
 [data-theme="terminal"] .flow .dock .win button:active, [data-theme="terminal"] .flow .dock .jump button:active { background: var(--sel); }
 
 /* status line of the tab */
 [data-theme="terminal"] .flow .fstrip { min-height: var(--tap); padding: 0 0 4px 4px; border-bottom: 1px solid var(--hair); }
 [data-theme="terminal"] .flow .fstrip .ttl { color: var(--ink2); font: 400 var(--t-label)/18px var(--font-ui); }
-[data-theme="terminal"] .flow .f-live { padding: 0 5px; background: var(--ok); color: #000; font: 700 12px/16px var(--font-ui); white-space: nowrap; }
-[data-theme="terminal"] .flow .f-live.stale { background: var(--cancel); color: #fff; }
+[data-theme="terminal"] .flow .f-live { padding: 0 5px; background: var(--ok); color: var(--on-tag-live); font: 700 12px/16px var(--font-ui); white-space: nowrap; }
+[data-theme="terminal"] .flow .f-live.stale { background: var(--cancel); color: var(--on-cancel); }
 [data-theme="terminal"] .flow .f-live.off { background: none; box-shadow: inset 0 0 0 1px var(--line-strong); color: var(--ink); }
 [data-theme="terminal"] .flow .hbtn { min-width: var(--tap); min-height: var(--tap); padding: 0 12px; border: 1px solid var(--line-strong); background: var(--bar); color: var(--ink);
   font: 700 var(--t-label)/18px var(--font-ui); }
 [data-theme="terminal"] .flow .hbtn:active { background: var(--sel); }
 [data-theme="terminal"] .flow .hbtn .dot { width: 8px; height: 8px; border-radius: 50% !important; }
 [data-theme="terminal"] .flow .banner { margin: 4px 0 0; padding: 8px; align-items: baseline; border: 1px solid var(--line); background: var(--bg); color: var(--ink); font: 400 14px/19px var(--font-ui); }
-[data-theme="terminal"] .flow .banner b { padding: 0 5px; background: var(--warn-fill); color: #000; font: 700 12px/16px var(--font-ui); text-transform: uppercase !important; }
-[data-theme="terminal"] .flow.stale .banner b { background: var(--cancel); color: #fff; }
+[data-theme="terminal"] .flow .banner b { padding: 0 5px; background: var(--warn-fill); color: var(--on-warn); font: 700 12px/16px var(--font-ui); text-transform: uppercase !important; }
+[data-theme="terminal"] .flow.stale .banner b { background: var(--cancel); color: var(--on-cancel); }
 [data-theme="terminal"] .flow.stale .fmain .live-num, [data-theme="terminal"] .flow.stale .fmain canvas, [data-theme="terminal"] .flow.stale .tape-list,
 [data-theme="terminal"] .flow.stale .verdict, [data-theme="terminal"] .flow.stale .heat, [data-theme="terminal"] .flow .mkt.thin { opacity: 1; }
 
@@ -353,9 +344,9 @@
 
 /* segments inside a panel: steel blue is the one that is on */
 [data-theme="terminal"] .flow .fseg { gap: 8px; border: 0; }
-[data-theme="terminal"] .flow .fseg button { min-width: var(--tap); height: var(--tap); padding: 0 12px; border: 0; background: #1E1E1E; color: #F0F0F0; font: 700 var(--t-label)/18px var(--font-ui); }
+[data-theme="terminal"] .flow .fseg button { min-width: var(--tap); height: var(--tap); padding: 0 12px; border: 0; background: var(--seg); color: var(--on-seg); font: 700 var(--t-label)/18px var(--font-ui); }
 [data-theme="terminal"] .flow .fseg button::after { content: none; }
-[data-theme="terminal"] .flow .fseg button[aria-pressed="true"] { background: var(--seg-on); color: #fff; }
+[data-theme="terminal"] .flow .fseg button[aria-pressed="true"] { background: var(--seg-on); color: var(--on-seg-on); }
 [data-theme="terminal"] .flow .fseg button:active { background: var(--sel); }
 [data-theme="terminal"] .flow .tools { gap: 8px; padding: 8px; border-bottom: 1px solid var(--hair); }
 [data-theme="terminal"] .flow .tools[style] { margin: -8px -8px 8px !important; }
@@ -376,7 +367,7 @@
 [data-theme="terminal"] .flow .verdict.even { box-shadow: inset 0 0 0 1px var(--line-strong); color: var(--ink); }
 [data-theme="terminal"] .flow .heat, [data-theme="terminal"] .flow .heat.quiet { height: 24px; padding: 0 8px; border: 0; box-shadow: inset 0 0 0 1px var(--line-strong); color: var(--ink);
   font: 700 var(--t-micro)/16px var(--font-ui); }
-[data-theme="terminal"] .flow .heat.hot { background: var(--warn-fill); box-shadow: none; color: #000; }
+[data-theme="terminal"] .flow .heat.hot { background: var(--warn-fill); box-shadow: none; color: var(--on-warn); }
 [data-theme="terminal"] .flow .read { margin: 8px 0 0; color: var(--ink); font: 400 var(--t-body)/20px var(--font-ui); }
 [data-theme="terminal"] .flow .read .why { color: var(--ink2); }
 
@@ -388,7 +379,7 @@
 [data-theme="terminal"] .flow .gauge .track { top: 18px; background: var(--bar2); }
 [data-theme="terminal"] .flow .gauge .fill { top: 18px; }
 [data-theme="terminal"] .flow .gauge.hot .fill { background: var(--warn-fill); }
-[data-theme="terminal"] .flow .gauge .over { top: 0; right: 0; padding: 0 5px; background: var(--warn-fill); color: #000; font: 700 var(--t-micro)/16px var(--font-ui); }
+[data-theme="terminal"] .flow .gauge .over { top: 0; right: 0; padding: 0 5px; background: var(--warn-fill); color: var(--on-warn); font: 700 var(--t-micro)/16px var(--font-ui); }
 [data-theme="terminal"] .flow .gauge .tick { top: 15px; width: 0; border-left: 1px solid var(--muted); background: none; }
 [data-theme="terminal"] .flow .gauge .tick span { top: 12px; left: -14px; width: 28px; font-size: var(--t-micro); line-height: 15px; }
 [data-theme="terminal"] .flow .gauge .tick[style*="100%"] span { left: auto; right: 0; text-align: right; }
@@ -452,8 +443,8 @@
 [data-theme="terminal"] .flow .ev .l1 .x { color: var(--muted); font-size: var(--t-micro); font-weight: 400; }
 [data-theme="terminal"] .flow .ev .u { color: var(--ink); font: 700 var(--t-body)/20px var(--font-ui); }
 [data-theme="terminal"] .flow .ev .l2 { color: var(--muted); font-size: var(--t-micro); line-height: 16px; white-space: normal; }
-[data-theme="terminal"] .flow .ev.al .g { background: var(--warn-fill); color: #000; font-weight: 700; }
-[data-theme="terminal"] .flow .ev .flag { padding: 0 5px; background: var(--warn-fill); color: #000; font: 700 12px/16px var(--font-ui); text-transform: uppercase !important; }
+[data-theme="terminal"] .flow .ev.al .g { background: var(--warn-fill); color: var(--on-warn); font-weight: 700; }
+[data-theme="terminal"] .flow .ev .flag { padding: 0 5px; background: var(--warn-fill); color: var(--on-warn); font: 700 12px/16px var(--font-ui); text-transform: uppercase !important; }
 
 /* order book, fuel */
 [data-theme="terminal"] .flow .flegend { color: var(--ink2); font-size: var(--t-micro); line-height: 16px; }
@@ -482,7 +473,7 @@
 [data-theme="terminal"] .flow .vr.off .vol { color: var(--muted); }
 [data-theme="terminal"] .flow .vr.off .nm { line-height: 17px; }
 [data-theme="terminal"] .flow .vr.off .nm::after { display: block; margin-left: 0; overflow: hidden; color: var(--muted); font-size: var(--t-micro); line-height: 15px; text-overflow: ellipsis; }     /* why it is off: its own line under the name */
-[data-theme="terminal"] .flow .vr.is-down .nm::after { width: fit-content; padding: 0 5px; background: var(--warn-fill); color: #000; font-weight: 700; }
+[data-theme="terminal"] .flow .vr.is-down .nm::after { width: fit-content; padding: 0 5px; background: var(--warn-fill); color: var(--on-warn); font-weight: 700; }
 [data-theme="terminal"] .flow .vnote { padding: 8px !important; }
 
 /* what floats: the price bar at the top, the alert toast above the tab bar, a sheet above the tab bar */
@@ -494,19 +485,19 @@
 [data-theme="terminal"] .flow .mini .mpx { font: 700 var(--t-value)/20px var(--font-ui); }
 [data-theme="terminal"] .flow .mini .mv { flex: 1 1 0; min-width: 0; font: 700 var(--t-label)/15px var(--font-ui); }     /* takes a second line on a narrow screen */
 [data-theme="terminal"] .flow .mini .mx { color: var(--ink2); font: 400 var(--t-micro)/16px var(--font-ui); }
-[data-theme="terminal"] .flow .mini .mx.hot { padding: 0 5px; background: var(--warn-fill); color: #000; font-weight: 700; }
-[data-theme="terminal"] .flow .toast { bottom: calc(var(--fn) + 8px); min-height: var(--tap); padding: 4px 12px; border: 1px solid #000; background: var(--warn-fill); color: #000;
+[data-theme="terminal"] .flow .mini .mx.hot { padding: 0 5px; background: var(--warn-fill); color: var(--on-warn); font-weight: 700; }
+[data-theme="terminal"] .flow .toast { bottom: calc(var(--fn) + 8px); min-height: var(--tap); padding: 4px 12px; border: 1px solid var(--cut); background: var(--warn-fill); color: var(--on-warn);
   font: 400 var(--t-label)/18px var(--font-ui); box-shadow: none; }
 [data-theme="terminal"] .flow .toast b { font-weight: 700; }
 [data-theme="terminal"] .flow .toast > span:not(.tv), [data-theme="terminal"] .flow .toast .tv { font-size: var(--t-micro); opacity: 1; }
 [data-theme="terminal"] .flow .toast .tv { font-weight: 700; }
 /* no slide: a sheet is there or it is not. Switched off it is not drawn at all, so nothing of it can sit behind the tab bar. */
-[data-theme="terminal"] .flow .scrim { bottom: var(--fn); background: rgba(0, 0, 0, .6); transition: none; visibility: hidden; }
+[data-theme="terminal"] .flow .scrim { bottom: var(--fn); background: var(--scrim); transition: none; visibility: hidden; }
 [data-theme="terminal"] .flow .sheet { bottom: var(--fn); max-height: 70vh; padding: 0 8px 8px; border-top: 1px solid var(--line-strong); background: var(--bg); transform: none; transition: none; visibility: hidden; }
 [data-theme="terminal"] .flow .sheet .grab { display: none; }
 [data-theme="terminal"] .flow .sheet h3 { position: sticky; top: 0; z-index: 1; min-height: var(--tap); margin: 0 -8px 8px; padding: 0 0 0 8px; background: var(--bar2); color: var(--ink);
   font: 700 var(--t-label)/18px var(--font-ui); }
-[data-theme="terminal"] .flow .sheet h3 button { min-width: 64px; height: var(--tap); padding: 0 14px; border: 0; border-left: 1px solid #000; background: var(--bar); color: var(--ink);
+[data-theme="terminal"] .flow .sheet h3 button { min-width: 64px; height: var(--tap); padding: 0 14px; border: 0; border-left: 1px solid var(--cut); background: var(--bar); color: var(--ink);
   font: 700 var(--t-label)/18px var(--font-ui); }
 [data-theme="terminal"] .flow .sheet h3 button:active { background: var(--sel); }
 [data-theme="terminal"] .flow .sheet p { margin: 0 0 8px; color: var(--ink); font: 400 14px/19px var(--font-ui); }

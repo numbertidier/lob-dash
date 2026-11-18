@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="terminal">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -8,55 +8,15 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="LOB">
-<meta name="theme-color" content="#050607">
+<meta name="theme-color" content="#000000">
 <link rel="apple-touch-icon" href="icon.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <link rel="stylesheet" href="flow.css">
 <script src="https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
 <style>
-/* Layout: terminal desk look after BOT.DASH. One column on phone. Strips for section titles, mono throughout. */
-:root {
-  --bg: #050607; --panel: #0b0d10; --strip: #15181d; --ink: #e6e8eb; --ink2: #a3aab3; --muted: #6b7480; --line: #1f242b;
-  --accent: #f5a524; --num: #5aa2ff; --up: #3ccf8e; --down: #ff5c5c; --book: #f2f4f6; --leg1: #5aa2ff; --leg2: #f5a524;
-  --fund: #b48cff; --bid: #3ccf8e; --ask: #ff5c5c; --on-accent: #050607;
-  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
-  color-scheme: dark;
-}
-@media (prefers-color-scheme: light) {
-  :root:not([data-theme="dark"]) {
-    --bg: #f4f4f1; --panel: #ffffff; --strip: #ecebe6; --ink: #121417; --ink2: #3d4450; --muted: #7b828c; --line: #d9dad4;
-    --accent: #b35c00; --num: #1f5fd6; --up: #0b8a55; --down: #c62f2f; --book: #121417; --leg1: #1f5fd6; --leg2: #b35c00;
-    --fund: #7a4fd0; --bid: #0b8a55; --ask: #c62f2f; --on-accent: #ffffff; color-scheme: light;
-  }
-}
-:root[data-theme="light"] {
-  --bg: #f4f4f1; --panel: #ffffff; --strip: #ecebe6; --ink: #121417; --ink2: #3d4450; --muted: #7b828c; --line: #d9dad4;
-  --accent: #b35c00; --num: #1f5fd6; --up: #0b8a55; --down: #c62f2f; --book: #121417; --leg1: #1f5fd6; --leg2: #b35c00;
-  --fund: #7a4fd0; --bid: #0b8a55; --ask: #c62f2f; --on-accent: #ffffff; color-scheme: light;
-}
-/* Read: pure greyscale for long reading. Gains and losses are read from their sign. */
-:root[data-theme="read"] {
-  --bg: #ececec; --panel: #f7f7f7; --strip: #e2e2e2; --ink: #161616; --ink2: #3a3a3a; --muted: #6e6e6e; --line: #cfcfcf;
-  --accent: #222222; --num: #000000; --up: #161616; --down: #161616; --book: #000000; --leg1: #4a4a4a; --leg2: #8a8a8a;
-  --fund: #9a9a9a; --bid: #3a3a3a; --ask: #9a9a9a; --on-accent: #f7f7f7; color-scheme: light;
-}
-/* The filter sits on the P&L views only: a filter on body breaks position: fixed in the Flow tab (dock, sheets). */
-:root[data-theme="read"] .wrap > :not(#view-flow) { filter: grayscale(1); }
-:root[data-theme="read"] .down { font-weight: 600; }
-/* Warm: blue-light free. Amber, orange and red on black only. */
-:root[data-theme="warm"] {
-  --bg: #070403; --panel: #0e0805; --strip: #1a0f08; --ink: #ffb870; --ink2: #d98f4e; --muted: #8a5a32; --line: #2a1a0e;
-  --accent: #ff9a2e; --num: #ffc46b; --up: #ffd27a; --down: #ff4a2a; --book: #ffd9a6; --leg1: #ff7a3d; --leg2: #ffc46b;
-  --fund: #c2703a; --bid: #ffd27a; --ask: #ff4a2a; --on-accent: #070403; color-scheme: dark;
-}
-/* Mono: pure black, white and greys only (shared "mono" tokens). Losses are grey and italic, and keep their minus sign. */
-:root[data-theme="mono"] {
-  --bg: #000000; --panel: #000000; --strip: #161616; --ink: #ffffff; --ink2: #d4d4d4; --muted: #9a9a9a; --line: #3a3a3a;
-  --accent: #ffffff; --num: #ffffff; --up: #ffffff; --down: #8f8f8f; --book: #ffffff; --leg1: #bdbdbd; --leg2: #8a8a8a;
-  --fund: #a6a6a6; --bid: #ffffff; --ask: #8f8f8f; --on-accent: #000000; color-scheme: dark;
-}
-:root[data-theme="mono"] .down { font-style: italic; }
+/* Base layout: one column on a phone. These rules are the older page's. The Desk rules further down were written on
+   top of them and still lean on them (flex and grid, wrapping, scrolling), so they stay. Every colour here comes from a
+   token of the Desk block. Before removing a rule, prove that Desk does not move. */
+:root { --mono: ui-monospace, Menlo, monospace; color-scheme: dark; }
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
 html, body { margin: 0; }
@@ -81,9 +41,6 @@ h2 { font-size: 11px; margin: -10px -10px 10px; padding: 6px 10px; text-transfor
 button { font: inherit; color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 2px;
   padding: 5px 10px; cursor: pointer; text-transform: uppercase; letter-spacing: .06em; font-size: 11px; }
 button.small { font-size: 10px; padding: 2px 8px; color: var(--ink2); }
-/* the way into the Desk look from an older look: drawn small so nothing else moves, but with a thumb-sized hit area */
-button.small[data-theme-pick="terminal"] { position: relative; }
-button.small[data-theme-pick="terminal"]::after { content: ""; position: absolute; inset: -12px -4px; }
 button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .seg { display: flex; flex-wrap: wrap; gap: 0; }
 .seg button { border-radius: 0; margin-left: -1px; color: var(--accent); background: transparent; border-color: var(--line); font-weight: 600; }
@@ -147,9 +104,9 @@ tbody tr.pick:hover td, tbody tr.sel td { background: color-mix(in srgb, var(--a
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* ── Desk: the desktop page's terminal look, loosened for a thumb ─────────────────────────────────
-   On when <html data-theme="terminal">, the same switch as bot_dash/static/terminal.css. Token names and values
-   are that sheet's, so the two read side by side. Every rule here is scoped to it: the other five looks never see it.
-   The Flow tab's Desk rules are in flow.css.
+   The page's one UI. <html data-theme="terminal"> is always set, the same switch as bot_dash/static/terminal.css. Token
+   names and values are that sheet's, so the two read side by side. Every rule here is scoped to it.
+   The Flow tab's Desk rules are in flow.css. The skins (other colours for this UI) are at the end of this sheet.
    What each colour means:
      amber text    a label or a name            amber fill    you can edit this
      white         a value or a title           grey          a unit, a time, a count beside a value
@@ -158,8 +115,6 @@ tbody tr.pick:hover td, tbody tr.sel td { background: color-mix(in srgb, var(--a
      green fill    go, confirm                  red fill      an alarm            yellow fill   the crosshair
    Phone rules: body text 15px, nothing under 12px, every control at least 44 by 44 with 8px to its neighbour.
    No letter spacing. Upper case is for codes only. Radius 0, no soft shadows. */
-:root:not([data-theme="terminal"]) .tm-only { display: none !important; }
-[data-theme="terminal"] .tm-not { display: none !important; }
 :root[data-theme="terminal"] {
   color-scheme: dark;
   /* surfaces */
@@ -180,13 +135,21 @@ tbody tr.pick:hover td, tbody tr.sel td { background: color-mix(in srgb, var(--a
   --font-ui: Tahoma, Verdana, "DejaVu Sans", sans-serif;
   --font-mono: Menlo, Monaco, "DejaVu Sans Mono", Consolas, monospace;
   --t-micro: 12px; --t-label: 13px; --t-body: 15px; --t-value: 16px; --t-big: 20px; --t-hero: 30px;
+  /* tokens that replace literal colours in the rules below (Desk values = the old literals) */
+  --cut: #000000; --fn-on: #000000; --on-fn: #FFFFFF; --on-fn-on: #FFFFFF;
+  --seg: #1E1E1E; --on-seg: #F0F0F0; --on-seg-on: #FFFFFF;
+  --on-cancel: #FFFFFF; --on-go: #000000; --on-warn: #000000; --on-info: #000000;
+  --tag-live: #FFFFFF; --on-tag-live: #000000; --tag: #FFFFFF; --on-tag: #000000;
+  --cross: #FFE100; --on-cross: #000000; --on-field: #000000; --on-field-dim: #5C3A00; --field-edge: #FFA028;
+  --scrim: rgba(0, 0, 0, .6); --status: #000000;
   --tap: 44px; --fn-h: 51px;   /* the function bar: 50px of buttons and its 1px top rule */
 }
 
 /* globals */
-[data-theme="terminal"] body { font: 400 var(--t-body)/20px var(--font-ui); -webkit-font-smoothing: antialiased;
+[data-theme="terminal"] body { background: linear-gradient(var(--status), var(--status)) top / 100% env(safe-area-inset-top, 0px) no-repeat var(--bg);
+  font: 400 var(--t-body)/20px var(--font-ui); -webkit-font-smoothing: antialiased;
   padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px)); }
-[data-theme="terminal"] ::selection { background: var(--info-fill); color: #000; }
+[data-theme="terminal"] ::selection { background: var(--info-fill); color: var(--on-info); }
 [data-theme="terminal"] :focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
 [data-theme="terminal"] .up { color: var(--up) !important; }
 
@@ -203,9 +166,8 @@ tbody tr.pick:hover td, tbody tr.sel td { background: color-mix(in srgb, var(--a
 [data-theme="terminal"] h1 { font: 700 var(--t-body)/20px var(--font-ui); letter-spacing: 0; color: var(--ink); white-space: nowrap; }
 [data-theme="terminal"] h1 span { color: var(--ink2); }
 [data-theme="terminal"] .stamp { color: var(--muted); font-size: var(--t-micro); white-space: nowrap; }
-[data-theme="terminal"] .live { margin: 0; padding: 0 5px; border-radius: 0; background: #fff; color: #000; font: 700 12px/16px var(--font-ui);
+[data-theme="terminal"] .live { margin: 0; padding: 0 5px; border-radius: 0; background: var(--tag-live); color: var(--on-tag-live); font: 700 12px/16px var(--font-ui);
   letter-spacing: 0; white-space: nowrap; }
-[data-theme="terminal"] #themeSeg { display: none; }
 
 /* buttons. Element rules stop at the Flow tab (:where keeps their weight as it was): its Desk rules are in flow.css. */
 [data-theme="terminal"] button:where(:not(.flow *)) { min-height: var(--tap); padding: 0 14px; border: 1px solid var(--line-strong); border-radius: 0; background: var(--bar);
@@ -213,13 +175,13 @@ tbody tr.pick:hover td, tbody tr.sel td { background: color-mix(in srgb, var(--a
 [data-theme="terminal"] button:where(:not(.flow *)):active { background: var(--sel); }
 [data-theme="terminal"] #refresh { width: var(--tap); padding: 0; border: 0; background: none; font: 400 20px/1 var(--font-ui); }
 [data-theme="terminal"] #refresh:active { background: var(--sel); }
-[data-theme="terminal"] #save { background: var(--go); border-color: var(--go); color: #000; }
+[data-theme="terminal"] #save { background: var(--go); border-color: var(--go); color: var(--on-go); }
 
-/* segments: a choice that changes what is shown (bar size, look). Steel blue is the one that is on. */
+/* segments: a choice that changes what is shown (bar size, skin). The one that is on has the --seg-on fill (steel blue in Desk). */
 [data-theme="terminal"] .seg { gap: 8px; }
-[data-theme="terminal"] .seg button { flex: 1 1 0; min-width: var(--tap); margin: 0; padding: 0 4px; border: 0; background: #1E1E1E; color: #F0F0F0; }
+[data-theme="terminal"] .seg button { flex: 1 1 0; min-width: var(--tap); margin: 0; padding: 0 4px; border: 0; background: var(--seg); color: var(--on-seg); }
 [data-theme="terminal"] .seg button:active { background: var(--sel); }
-[data-theme="terminal"] .seg button[aria-pressed="true"] { background: var(--seg-on); color: #fff; }
+[data-theme="terminal"] .seg button[aria-pressed="true"] { background: var(--seg-on); color: var(--on-seg-on); }
 [data-theme="terminal"] .controls { display: contents; }
 [data-theme="terminal"] #barRow { flex-wrap: nowrap; gap: 8px; margin-top: 4px; padding-left: 4px; }
 [data-theme="terminal"] #barSeg, [data-theme="terminal"] #lookSeg { flex: 1 1 auto; max-width: 480px; }
@@ -231,12 +193,13 @@ tbody tr.pick:hover td, tbody tr.sel td { background: color-mix(in srgb, var(--a
    hit box keeps 8px from the next; the 4px either side is painted with shadows, so nothing reaches outside the button's box. */
 [data-theme="terminal"] #tabList { position: fixed; left: 0; right: 0; bottom: 0; z-index: 50; flex-wrap: nowrap; gap: 8px;
   padding: 0 max(4px, env(safe-area-inset-right, 0px)) env(safe-area-inset-bottom, 0px) max(4px, env(safe-area-inset-left, 0px));
-  background: var(--fn-bar); border-top: 1px solid #000; }
+  background: var(--fn-bar); border-top: 1px solid var(--cut); }
 [data-theme="terminal"] #tabList .item { position: relative; z-index: 0; flex: 1 1 auto; min-width: var(--tap); min-height: 50px; padding: 0 2px; border: 0;
-  background: none; color: var(--ink); font: 700 14px/18px var(--font-ui); white-space: normal; }
-[data-theme="terminal"] #tabList .item::before { content: ""; position: absolute; z-index: -1; inset: 0; box-shadow: -3px 0 0 var(--fn-bar), -4px 0 0 #000; }
+  background: none; color: var(--on-fn); font: 700 14px/18px var(--font-ui); white-space: normal; }
+[data-theme="terminal"] #tabList .item:active, [data-theme="terminal"] #tabList .item[aria-selected="true"] { color: var(--on-fn-on); }
+[data-theme="terminal"] #tabList .item::before { content: ""; position: absolute; z-index: -1; inset: 0; box-shadow: -3px 0 0 var(--fn-bar), -4px 0 0 var(--cut); }
 [data-theme="terminal"] #tabList .item:first-child::before { box-shadow: none; }
-[data-theme="terminal"] #tabList .item:active::before, [data-theme="terminal"] #tabList .item[aria-selected="true"]::before { background: #000; box-shadow: -4px 0 0 #000, 4px 0 0 #000; }
+[data-theme="terminal"] #tabList .item:active::before, [data-theme="terminal"] #tabList .item[aria-selected="true"]::before { background: var(--fn-on); box-shadow: -4px 0 0 var(--fn-on), 4px 0 0 var(--fn-on); }
 [data-theme="terminal"] #tabList .item[aria-selected="true"]::after { content: ""; position: absolute; z-index: -1; top: 0; left: 0; right: 0; height: 2px; background: var(--amber);
   box-shadow: -3px 0 0 var(--amber), 4px 0 0 var(--amber); }
 [data-theme="terminal"] #tabList .item:first-child[aria-selected="true"]::after { box-shadow: -4px 0 0 var(--amber), 4px 0 0 var(--amber); }
@@ -276,13 +239,13 @@ tbody tr.pick:hover td, tbody tr.sel td { background: color-mix(in srgb, var(--a
 [data-theme="terminal"] #lobTiles .tile:nth-child(4) { order: -1; }
 [data-theme="terminal"] #lobTiles .tile:nth-child(3) .v { font: 700 var(--t-hero)/36px var(--font-ui); }
 /* an alarm is a red fill with white text, never a number's sign */
-[data-theme="terminal"] .alarm { color: #fff !important; }
+[data-theme="terminal"] .alarm { color: var(--on-cancel) !important; }
 [data-theme="terminal"] .tile .v.alarm { display: inline-block; margin: 4px 8px 0; padding: 0 8px; background: var(--cancel); }
 [data-theme="terminal"] td.alarm { background: var(--cancel) !important; font-weight: 700; }
 
 /* tables: grey head, amber names, white figures, hairlines; the first column stays put when the rest scrolls */
 [data-theme="terminal"] table { font-size: var(--t-body); }
-[data-theme="terminal"] th { height: 28px; padding: 0 8px; border: 0; border-right: 1px solid #000; background: var(--bar); color: var(--ink2);
+[data-theme="terminal"] th { height: 28px; padding: 0 8px; border: 0; border-right: 1px solid var(--cut); background: var(--bar); color: var(--ink2);
   font: 400 var(--t-label)/18px var(--font-ui); letter-spacing: 0; text-transform: none; }
 [data-theme="terminal"] td { height: 30px; padding: 0 8px; border: 0; border-right: 1px solid var(--hair); border-bottom: 1px solid var(--hair); }
 [data-theme="terminal"] th:first-child, [data-theme="terminal"] td:first-child { position: sticky; left: 0; z-index: 1; box-shadow: 1px 0 0 var(--line); }
@@ -296,7 +259,7 @@ tbody tr.pick:hover td, tbody tr.sel td { background: color-mix(in srgb, var(--a
 [data-theme="terminal"] #lobTable tr.pick.sel td { background: var(--sel); border-color: var(--info-fill); }
 [data-theme="terminal"] #lobTable tr.pick.sel td:first-child { box-shadow: inset 3px 0 0 var(--info-fill), 1px 0 0 var(--line); }
 [data-theme="terminal"] #lobTable tr.pick.sel .down { color: var(--down-sel) !important; }
-[data-theme="terminal"] #lobTable tr.pick.sel .alarm { color: #fff !important; }
+[data-theme="terminal"] #lobTable tr.pick.sel .alarm { color: var(--on-cancel) !important; }
 
 /* charts: the readout row, the plot, the series switches */
 [data-theme="terminal"] .readout { min-height: 40px; margin: 0; padding: 4px 8px; color: var(--ink2); font: 400 var(--t-micro)/16px var(--font-ui); }
@@ -306,7 +269,8 @@ tbody tr.pick:hover td, tbody tr.sel td { background: color-mix(in srgb, var(--a
 [data-theme="terminal"] .readout .v { color: var(--ink); }
 [data-theme="terminal"] .has-tool + .readout { padding-right: 56px; }
 [data-theme="terminal"] .chart text { fill: var(--axis); font: 12px var(--font-ui); }
-[data-theme="terminal"] .chart text.tag { fill: #000; font-weight: 700; }
+[data-theme="terminal"] .chart text.tag { fill: var(--on-tag); font-weight: 700; }
+[data-theme="terminal"] .chart g[pointer-events] text.tag { fill: var(--on-cross); }   /* the crosshair's tags */
 [data-theme="terminal"] .toggles { gap: 8px; margin: 0; padding: 6px 8px 8px; color: var(--ink2); font-size: var(--t-label); }
 [data-theme="terminal"] .toggles label { position: relative; min-width: var(--tap); min-height: var(--tap); padding: 0 10px; gap: 6px; background: var(--raised);
   box-shadow: inset 0 0 0 1px var(--bar2); }
@@ -334,22 +298,89 @@ tbody tr.pick:hover td, tbody tr.sel td { background: color-mix(in srgb, var(--a
 [data-theme="terminal"] .setup { gap: 0; }
 [data-theme="terminal"] .setup label { padding: 8px 8px 6px; color: var(--amber); font-size: 14px; line-height: 19px; }
 [data-theme="terminal"] .setup input { width: calc(100% - 16px); height: var(--tap); margin: 0 8px; padding: 0 8px; border: 0; border-radius: 0; background: var(--field);
-  color: #000; font: 400 16px/20px var(--font-mono); }
-[data-theme="terminal"] .setup input::placeholder { color: #5C3A00; opacity: 1; }
-[data-theme="terminal"] .setup input:focus { outline: 1px solid #fff; box-shadow: 0 0 0 2px #000, 0 0 0 3px var(--info-fill); }
+  color: var(--on-field); box-shadow: inset 0 0 0 2px var(--field-edge); font: 400 16px/20px var(--font-mono); }
+[data-theme="terminal"] .setup input::placeholder { color: var(--on-field-dim); opacity: 1; }
+[data-theme="terminal"] .setup input:focus { outline: 1px solid var(--focus); box-shadow: 0 0 0 2px var(--cut), 0 0 0 3px var(--info-fill); }
 [data-theme="terminal"] .setup .row { padding: 8px; gap: 8px 12px; }
 [data-theme="terminal"] main > p.row { margin-top: 4px; margin-bottom: 4px; }
+
+/* ── Skins: the Desk UI in other colours ──────────────────────────────────────────────────────────
+   A skin changes colours only: no layout, no type size, no spacing, and never what a colour means.
+   On when <html data-skin="day | mono | read | warm">. No data-skin is Desk itself.
+   Each block restates every colour token the Desk rules read. The names made with var() in the Desk block (--strip,
+   --accent, --num, --book, --leg1, --leg2, --fund, --bid, --ask) follow by themselves.
+   To add a colour to a rule: add a token to the Desk block and to all four skins. Never put a literal in a rule. */
+/* ── Day ── */
+:root[data-theme="terminal"][data-skin="day"] {
+  color-scheme: light;
+  /* surfaces */
+  --bg: #FFFFFF; --panel: #FFFFFF; --raised: #F1F1F1; --chrome: #E3E3E3; --bar: #D9D9D9; --bar2: #C6C6C6; --sel: #CFE3F7; --seg-on: #1B5FAA; --seg: #E2E2E2; --fn-bar: #870F1E; --fn-on: #FFFFFF; --field: #FFD08A; --field-edge: #A63C00; --go: #1A7A2E; --cancel: #C0141F; --warn-fill: #B58900; --info-fill: #0B4A99; --alert-block: #FBE3E5; --tag-live: #000000; --tag: #000000; --cross: #7A5600; --cut: #FFFFFF; --status: #1A1A1A; --scrim: rgba(0, 0, 0, .45);
+  /* text */
+  --amber: #A63C00; --ink: #000000; --ink2: #2A2A2A; --muted: #595959; --faint: #676767; --up: #00695C; --down: #B5001C; --down-sel: #A80019;
+  /* text on a fill */
+  --on-fn: #FFFFFF; --on-fn-on: #000000; --on-seg: #111111; --on-seg-on: #FFFFFF; --on-cancel: #FFFFFF; --on-warn: #000000; --on-go: #FFFFFF; --on-info: #FFFFFF; --on-tag-live: #FFFFFF; --on-tag: #FFFFFF; --on-cross: #FFFFFF; --on-field: #000000; --on-field-dim: #5C3A00; --on-accent: #FFFFFF;
+  /* lines */
+  --line: #8A8A8A; --line-strong: #5E5E5E; --hair: #DADADA; --grid: #B5B5B5; --zero: #3A3A3A; --axis: #000000; --focus: #000000;
+  /* chart series */
+  --s1: #000000; --s2: #A83200; --s3: #B58900; --s4: #5A5A5A; --s5: #8A8A8A;
+}
+
+/* ── Mono ── */
+:root[data-theme="terminal"][data-skin="mono"] {
+  color-scheme: dark;
+  /* surfaces */
+  --bg: #000000; --panel: #000000; --raised: #0C0C0C; --chrome: #191919; --bar: #232323; --bar2: #3A3A3A; --sel: #303030; --seg-on: #6C6C6C; --seg: #1A1A1A; --fn-bar: #5C5C5C; --fn-on: #000000; --field: #1A1A1A; --field-edge: #FFFFFF; --go: #E0E0E0; --cancel: #FFFFFF; --warn-fill: #8E8E8E; --info-fill: #FFFFFF; --alert-block: #1C1C1C; --tag-live: #FFFFFF; --tag: #FFFFFF; --cross: #FFFFFF; --cut: #000000; --status: #000000; --scrim: rgba(0, 0, 0, .6);
+  /* text */
+  --amber: #ABABAB; --ink: #FFFFFF; --ink2: #D7D7D7; --muted: #8E8E8E; --faint: #7C7C7C; --up: #FFFFFF; --down: #BDBDBD; --down-sel: #C8C8C8;
+  /* text on a fill */
+  --on-fn: #FFFFFF; --on-fn-on: #FFFFFF; --on-seg: #F0F0F0; --on-seg-on: #FFFFFF; --on-cancel: #000000; --on-warn: #000000; --on-go: #000000; --on-info: #000000; --on-tag-live: #000000; --on-tag: #000000; --on-cross: #000000; --on-field: #FFFFFF; --on-field-dim: #9A9A9A; --on-accent: #000000;
+  /* lines */
+  --line: #505050; --line-strong: #8C8C8C; --hair: #232323; --grid: #505050; --zero: #C0C0C0; --axis: #FFFFFF; --focus: #FFFFFF;
+  /* chart series */
+  --s1: #FFFFFF; --s2: #CFCFCF; --s3: #A6A6A6; --s4: #8C8C8C; --s5: #707070;
+}
+/* a down number is italic as well as dimmer (it keeps its minus sign and its arrow) */
+:root[data-theme="terminal"][data-skin="mono"] .down:not(.alarm) { font-style: italic; }
+
+/* ── Read ── */
+:root[data-theme="terminal"][data-skin="read"] {
+  color-scheme: light;
+  /* surfaces */
+  --bg: #E8E8E8; --panel: #E8E8E8; --raised: #DEDEDE; --chrome: #D4D4D4; --bar: #CACACA; --bar2: #B8B8B8; --sel: #FAFAFA; --seg-on: #3D3D3D; --seg: #CDCDCD; --fn-bar: #303030; --fn-on: #E8E8E8; --field: #FAFAFA; --field-edge: #1A1A1A; --go: #2E2E2E; --cancel: #000000; --warn-fill: #7E7E7E; --info-fill: #1A1A1A; --alert-block: #D2D2D2; --tag-live: #1A1A1A; --tag: #1A1A1A; --cross: #1A1A1A; --cut: #E8E8E8; --status: #303030; --scrim: rgba(0, 0, 0, .4);
+  /* text */
+  --amber: #505050; --ink: #1A1A1A; --ink2: #363636; --muted: #5A5A5A; --faint: #5A5A5A; --up: #1A1A1A; --down: #4A4A4A; --down-sel: #4A4A4A;
+  /* text on a fill */
+  --on-fn: #F2F2F2; --on-fn-on: #1A1A1A; --on-seg: #1A1A1A; --on-seg-on: #FFFFFF; --on-cancel: #FFFFFF; --on-warn: #000000; --on-go: #FFFFFF; --on-info: #FFFFFF; --on-tag-live: #F2F2F2; --on-tag: #F2F2F2; --on-cross: #FFFFFF; --on-field: #000000; --on-field-dim: #5A5A5A; --on-accent: #F2F2F2;
+  /* lines */
+  --line: #8E8E8E; --line-strong: #5A5A5A; --hair: #D0D0D0; --grid: #B4B4B4; --zero: #3A3A3A; --axis: #1A1A1A; --focus: #1A1A1A;
+  /* chart series */
+  --s1: #1A1A1A; --s2: #3B3B3B; --s3: #555555; --s4: #6C6C6C; --s5: #828282;
+}
+/* a down number is italic as well as lighter (it keeps its minus sign and its arrow) */
+:root[data-theme="terminal"][data-skin="read"] .down:not(.alarm) { font-style: italic; }
+
+/* ── Warm ── */
+:root[data-theme="terminal"][data-skin="warm"] {
+  color-scheme: dark;
+  /* surfaces */
+  --bg: #000000; --panel: #000000; --raised: #110A04; --chrome: #1C1108; --bar: #27180B; --bar2: #3D2511; --sel: #4A2A0E; --seg-on: #C9782A; --seg: #170D05; --fn-bar: #8C1A08; --fn-on: #000000; --field: #FFA028; --field-edge: #FFA028; --go: #FFD2A0; --cancel: #E53A1F; --warn-fill: #FFC800; --info-fill: #FFD2A0; --alert-block: #2A0C04; --tag-live: #FFD2A0; --tag: #FFD2A0; --cross: #FFC800; --cut: #000000; --status: #000000; --scrim: rgba(0, 0, 0, .6);
+  /* text */
+  --amber: #FFA028; --ink: #FFD2A0; --ink2: #E0AC78; --muted: #B8875A; --faint: #A37445; --up: #FFE066; --down: #FF5238; --down-sel: #FF8A6E;
+  /* text on a fill */
+  --on-fn: #FFD2A0; --on-fn-on: #FFD2A0; --on-seg: #F0C89C; --on-seg-on: #000000; --on-cancel: #000000; --on-warn: #000000; --on-go: #000000; --on-info: #000000; --on-tag-live: #000000; --on-tag: #000000; --on-cross: #000000; --on-field: #000000; --on-field-dim: #5C3A00; --on-accent: #000000;
+  /* lines */
+  --line: #5A3A1E; --line-strong: #A37445; --hair: #27180B; --grid: #5A3A1E; --zero: #C9A27A; --axis: #FFD2A0; --focus: #FFD2A0;
+  /* chart series */
+  --s1: #FFD2A0; --s2: #F06400; --s3: #FFE600; --s4: #C9996A; --s5: #8A5A32;
+}
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
-    <div class="row"><h1>LOB<span>.DESK</span></h1><span class="live" id="live" hidden>● LIVE</span><span class="stamp">v7</span><button class="small tm-not" data-theme-pick="terminal" aria-pressed="false">Desk look</button></div>
+    <div class="row"><h1>LOB<span>.DESK</span></h1><span class="live" id="live" hidden>● LIVE</span><span class="stamp">v8</span></div>
     <div class="row">
       <div class="stamp" id="stamp">not loaded</div>
-      <div class="seg" id="themeSeg" role="group" aria-label="Night or day mode">
-        <button aria-pressed="true" data-theme-pick="dark">☾ Night</button><button aria-pressed="false" data-theme-pick="light">☀ Day</button><button aria-pressed="false" data-theme-pick="read">◐ Read</button><button aria-pressed="false" data-theme-pick="warm">◒ Warm</button><button aria-pressed="false" data-theme-pick="mono">■ Mono</button>
-      </div>
       <button id="refresh" aria-label="Refresh now">↻</button>
     </div>
   </header>
@@ -357,13 +388,13 @@ tbody tr.pick:hover td, tbody tr.sel td { background: color-mix(in srgb, var(--a
 
   <div class="controls" id="tabs" hidden>
     <nav class="seg" role="tablist" id="tabList">
-      <button role="tab" class="item" aria-selected="true" data-tab="today"><span class="n tm-only">1)</span>Today</button>
-      <button role="tab" class="item" aria-selected="false" data-tab="d30" data-desk="30 days" data-classic="Last 30 days"><span class="n tm-only">2)</span>Last 30 days</button>
-      <button role="tab" class="item" aria-selected="false" data-tab="all"><span class="n tm-only">3)</span>All</button>
-      <button role="tab" class="item" aria-selected="false" data-tab="lob" data-desk="Book" data-classic="Order book"><span class="n tm-only">4)</span>Order book</button>
-      <button role="tab" class="item" aria-selected="false" data-tab="flow"><span class="n tm-only">5)</span>Flow</button>
+      <button role="tab" class="item" aria-selected="true" data-tab="today"><span class="n">1)</span>Today</button>
+      <button role="tab" class="item" aria-selected="false" data-tab="d30"><span class="n">2)</span>30 days</button>
+      <button role="tab" class="item" aria-selected="false" data-tab="all"><span class="n">3)</span>All</button>
+      <button role="tab" class="item" aria-selected="false" data-tab="lob"><span class="n">4)</span>Book</button>
+      <button role="tab" class="item" aria-selected="false" data-tab="flow"><span class="n">5)</span>Flow</button>
     </nav>
-    <div class="row" id="barRow"><span class="lbl" data-desk="Bars" data-classic="BARS">BARS</span>
+    <div class="row" id="barRow"><span class="lbl">Bars</span>
       <div class="seg" id="barSeg">
         <button aria-pressed="true" data-bar="auto">Auto</button><button aria-pressed="false" data-bar="1m">1m</button><button aria-pressed="false" data-bar="5m">5m</button><button aria-pressed="false" data-bar="15m">15m</button><button aria-pressed="false" data-bar="1h">1h</button>
       </div>
@@ -437,10 +468,10 @@ tbody tr.pick:hover td, tbody tr.sel td { background: color-mix(in srgb, var(--a
   <section class="flow" id="view-flow" hidden aria-label="Live BTC order flow"></section>
   <div class="loading" id="loading" hidden><span class="spin">↻</span> Loading from Hyperliquid…</div>
   <p class="err" id="err"></p>
-  <section class="panel tm-only" id="deskSet">
+  <section class="panel" id="deskSet">
     <h2>Look</h2>
     <div class="seg" id="lookSeg" role="group" aria-label="Look">
-      <button aria-pressed="false" data-theme-pick="terminal">Desk</button><button aria-pressed="false" data-theme-pick="dark">Night</button><button aria-pressed="false" data-theme-pick="light">Day</button><button aria-pressed="false" data-theme-pick="read">Read</button><button aria-pressed="false" data-theme-pick="warm">Warm</button><button aria-pressed="false" data-theme-pick="mono">Mono</button>
+      <button aria-pressed="false" data-skin-pick="desk">Desk</button><button aria-pressed="false" data-skin-pick="day">Day</button><button aria-pressed="false" data-skin-pick="mono">Mono</button><button aria-pressed="false" data-skin-pick="read">Read</button><button aria-pressed="false" data-skin-pick="warm">Warm</button>
     </div>
   </section>
 </div>
@@ -779,8 +810,18 @@ const LOB = (() => {
              fundingPerDay: days > 0 && sum ? sum.funding[sum.funding.length - 1] / days : 0 };
   }
 
+  /* ---- skins ---- */
+  const SKINS = { desk: "Desk", day: "Day", mono: "Mono", read: "Read", warm: "Warm" };
+  /* What the older page stored under lob.theme.v1, and the skin each of its looks becomes. */
+  const SKIN_OF_OLD_LOOK = { terminal: "desk", dark: "desk", light: "day", read: "read", warm: "warm", mono: "mono" };
+  /** The skin to open in: the stored skin if it is one of the five, else the skin of the look the older page stored, else Desk. */
+  function skinFor(storedSkin, storedOldLook) {
+    if (Object.hasOwn(SKINS, storedSkin ?? "")) return storedSkin;
+    return Object.hasOwn(SKIN_OF_OLD_LOOK, storedOldLook ?? "") ? SKIN_OF_OLD_LOOK[storedOldLook] : "desk";
+  }
+
   return { info, pool, isAddress, chooseInterval, maxDrawdown, fetchFills, fetchFunding, fetchCloses, summarise, windowCoins, combine,
-           endOfDay, dailyReturns, combineDaily, stats, positions, depth, loadBooks, loadAccounts, loadBookWindow, BOOKS, DAY_MS };
+           endOfDay, dailyReturns, combineDaily, stats, positions, depth, loadBooks, loadAccounts, loadBookWindow, BOOKS, DAY_MS, SKINS, skinFor };
 })();
 if (typeof module !== "undefined") module.exports = LOB;
 
@@ -790,31 +831,29 @@ if (typeof document !== "undefined") (() => {
   const KEY = "lob.master.v1";
   const TAB_KEY = "lob.tab.v1";
   const BAR_KEY = "lob.bar.v1";
-  const THEME_KEY = "lob.theme.v1";
-  const THEMES = { terminal: "Desk", dark: "Night", light: "Day", read: "Read", warm: "Warm", mono: "Mono" };
-  const DEFAULT_THEME = "terminal";      // a phone with no stored look opens in Desk; a stored look is kept
-  const WEB_FONT = '"IBM Plex Mono"';    // the face of the four older looks; Desk uses system faces only
-  const FONT_WAIT_MS = 1500;
-  const COIN_PALETTES = {
-    dark: ["#d9534f", "#2fa36b", "#8a6fd0", "#c9a227", "#2aa3c4", "#d1478f", "#5a8f29", "#3f6fd8", "#d9822b", "#20a39e"],
-    read: ["#202020", "#4a4a4a", "#6a6a6a", "#8a8a8a", "#a5a5a5", "#353535", "#5a5a5a", "#7a7a7a", "#959595", "#b0b0b0"],
-    warm: ["#ff4a2a", "#ffc46b", "#ff7a3d", "#e0a040", "#ff9a6a", "#c2502a", "#ffd9a6", "#d96a1a", "#ffb03a", "#a8401f"],
-    mono: ["#ffffff", "#c8c8c8", "#9a9a9a", "#e4e4e4", "#b0b0b0", "#7c7c7c", "#f2f2f2", "#d6d6d6", "#a4a4a4", "#8a8a8a"],
-  };
-  const isDesk = () => state.theme === "terminal";
-  const AXIS_W = 62;                     // Desk: least width of the right-hand value axis, as on the desktop page (wider when a label needs it)
+  const SKIN_KEY = "lob.skin.v1";        // desk, day, mono, read or warm. Written only when someone picks a skin.
+  const THEME_KEY = "lob.theme.v1";      // the older page's key. Read once to carry a choice over (LOB.skinFor). Never written, never removed.
+  const AXIS_W = 62;                     // least width of the right-hand value axis, as on the desktop page (wider when a label needs it)
   const hslHex = (h, s, l) => { const a = s * Math.min(l, 1 - l);
     const f = (n) => { const k = (n + h / 30) % 12; return Math.round(255 * (l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1)))).toString(16).padStart(2, "0"); };
     return `#${f(0)}${f(8)}${f(4)}`; };
-  /* Desk spreads coin hues round the wheel, as the desktop page does. The other looks keep their ten fixed colours. */
-  const coinColor = (i) => { if (isDesk()) return hslHex(Math.round(i * 137.5) % 360, 0.4, 0.6);
-    const pal = COIN_PALETTES[state.theme] || COIN_PALETTES.dark; return pal[i % pal.length]; };
+  /* Per-coin lines. Desk spreads hues round the wheel, as the desktop page does. A skin has four colours and three dashes
+     (0 solid, 2 dashed, 1 dotted): coin i takes colour i mod 4 and the dash changes every four coins, so twelve lines pass
+     before one repeats. No per-coin colour is the skin's main line colour. */
+  const COIN_RULES = {
+    day: { colors: ["#2A6FD0", "#C8501E", "#1E8A4C", "#C0408A"], dashes: [0, 2, 1] },
+    mono: { colors: ["#DADADA", "#ADADAD", "#8A8A8A", "#6E6E6E"], dashes: [0, 2, 1] },
+    read: { colors: ["#333333", "#555555", "#6E6E6E", "#828282"], dashes: [0, 2, 1] },
+    warm: { colors: ["#FFE65C", "#FFA23C", "#E55A22", "#94461A"], dashes: [0, 2, 1] },
+  };
+  const coinColor = (i) => { const rule = COIN_RULES[state.skin]; return rule ? rule.colors[i % rule.colors.length] : hslHex(Math.round(i * 137.5) % 360, 0.4, 0.6); };
+  const coinDash = (i) => { const rule = COIN_RULES[state.skin]; return rule ? rule.dashes[Math.floor(i / rule.colors.length) % rule.dashes.length] : 0; };
   const REFRESH_MS = { today: 60e3, d30: 300e3, all: 300e3, lob: 60e3 };
   const midnight = () => { const d = new Date(); return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()); };
   const VIEW_START = { today: () => midnight() - 60e3, d30: () => midnight() - 30 * LOB.DAY_MS, all: () => 0 };
 
   const state = { master: null, tab: "today", busy: false, accounts: null, fills: new Map(), views: {}, books: null,
-                  daily: null, picked: null, loadedAt: {}, bar: "auto", theme: "dark",
+                  daily: null, picked: null, loadedAt: {}, bar: "auto", skin: "desk",
                   cache: { candles: new Map(), funding: new Map() } };
   const charts = {};
 
@@ -853,35 +892,27 @@ if (typeof document !== "undefined") (() => {
   }
 
   /* ---- zoomable charts (TradingView lightweight-charts) ---- */
-  function chartTheme() {
-    if (isDesk()) return {
-      layout: { background: { type: "solid", color: css("--bg") }, textColor: css("--axis"), fontFamily: css("--font-ui"), fontSize: 12 },
-      grid: { vertLines: { color: css("--grid") }, horzLines: { color: css("--grid") } },
-      rightPriceScale: { borderColor: css("--axis") },
-      crosshair: { vertLine: { color: css("--zero"), labelBackgroundColor: css("--warn-fill") }, horzLine: { color: css("--zero"), labelBackgroundColor: css("--warn-fill") } },
-    };
-    return {
-      layout: { background: { type: "solid", color: css("--panel") }, textColor: css("--muted"), fontFamily: "IBM Plex Mono, Menlo, monospace", fontSize: 11 },
-      grid: { vertLines: { color: css("--line") }, horzLines: { color: css("--line") } },
-      rightPriceScale: { borderColor: css("--line") },
-      crosshair: { vertLine: { color: css("--muted"), labelBackgroundColor: css("--ink2") }, horzLine: { color: css("--muted"), labelBackgroundColor: css("--ink2") } },
-    };
-  }
-  /** What Desk sets on a plot beyond colours: a dotted grid, a value axis of fixed least width with tick marks, white
-   *  axis lines, time labels in regular weight, a dashed crosshair. */
+  /** A plot's colours and type, read from the skin's tokens when the plot is made. */
+  const chartTheme = () => ({
+    layout: { background: { type: "solid", color: css("--bg") }, textColor: css("--axis"), fontFamily: css("--font-ui"), fontSize: 12 },
+    grid: { vertLines: { color: css("--grid") }, horzLines: { color: css("--grid") } },
+    rightPriceScale: { borderColor: css("--axis") },
+    crosshair: { vertLine: { color: css("--zero"), labelBackgroundColor: css("--cross") }, horzLine: { color: css("--zero"), labelBackgroundColor: css("--cross") } },
+  });
+  /** What a plot is given beyond colours: a dotted grid, a value axis of fixed least width with tick marks, axis lines,
+   *  time labels in regular weight, a dashed crosshair. */
   const deskChart = () => ({
     grid: { vertLines: { style: 2 }, horzLines: { style: 2 } },
     rightPriceScale: { minimumWidth: AXIS_W, ticksVisible: true },
     timeScale: { borderColor: css("--axis"), ticksVisible: true, allowBoldLabels: false },
     crosshair: { vertLine: { style: 2 }, horzLine: { style: 2 } },
   });
-  /* A plot is built again when Desk is entered or left (see applyTheme). Which series were switched on waits here meanwhile. */
+  /* A plot is built again when the skin changes (see applySkin). Which series were switched on waits here meanwhile. */
   const carried = {};
-  /** Stroke of one line. Desk: the main line is 2px with its last value tagged on the axis; the rest are 1px in their own dash
-   *  (0 solid, 1 dotted, 2 dashed). The other looks: 1px, dashed or solid, no tag. */
-  const stroke = (l) => isDesk() ? { lineWidth: l.zeroLine ? 2 : 1, lineStyle: l.dash || 0, lastValueVisible: !!l.zeroLine }
-                                 : { lineWidth: 1, lineStyle: l.dashed ? 2 : 0, lastValueVisible: false };
-  const zeroStroke = () => isDesk() ? { color: css("--zero"), lineStyle: 0, lineWidth: 2 } : { color: css("--muted"), lineStyle: 2, lineWidth: 1 };
+  /** Stroke of one line. The main line is 2px with its last value tagged on the axis; the rest are 1px in their own dash
+   *  (0 solid, 1 dotted, 2 dashed). */
+  const stroke = (l) => ({ lineWidth: l.zeroLine ? 2 : 1, lineStyle: l.dash || 0, lastValueVisible: !!l.zeroLine });
+  const zeroStroke = () => ({ color: css("--zero"), lineStyle: 0, lineWidth: 2 });
   function getChart(key, unit) {
     if (charts[key]) return charts[key];
     if (typeof LightweightCharts === "undefined") throw new Error("Chart library did not load. Check the connection and pull again.");
@@ -893,9 +924,9 @@ if (typeof document !== "undefined") (() => {
       handleScroll: { vertTouchDrag: false, mouseWheel: true, pressedMouseMove: true, horzTouchDrag: true },
       handleScale: { axisPressedMouseMove: true, mouseWheel: true, pinch: true },
     });
-    const entry = { chart, series: new Map(), fmt, key, lastTime: null, desk: isDesk(), carried: carried[key] || null };
+    const entry = { chart, series: new Map(), fmt, key, lastTime: null, carried: carried[key] || null };
     delete carried[key];
-    if (entry.desk) chart.applyOptions(deskChart());
+    chart.applyOptions(deskChart());
     chart.subscribeCrosshairMove((param) => readout(entry, param.time));
     charts[key] = entry;
     return entry;
@@ -910,15 +941,14 @@ if (typeof document !== "undefined") (() => {
     const t = time ?? entry.lastTime;
     paintReadout($(`ro-${entry.key}`), t ? stampOf(t * 1000) : "", pairs);
   }
-  /** A readout row: a time, then [name, value] pairs (a name may be empty), then a note. Desk prints the time and note
-   *  in grey, names in amber and values in white, and never breaks a pair across lines. */
+  /** A readout row: a time, then [name, value] pairs (a name may be empty), then a note. The time and the note are in the
+   *  unit colour, names in the label colour, values in the value colour. A pair never breaks across lines. */
   function paintReadout(el, time, pairs, note = "") {
-    if (!isDesk()) { el.textContent = (time ? time + "  " : "") + pairs.map(([k, v]) => (k ? `${k} ${v}` : v)).join("  ") + (note ? "  " + note : ""); return; }
     el.innerHTML = (time ? `<span class="p t">${esc(time)}</span> ` : "") +
       pairs.map(([k, v]) => `<span class="p">${k ? `<span class="k">${esc(k)}</span> ` : ""}<span class="v">${esc(v)}</span></span>`).join(" ") +
       (note ? ` <span class="u">${esc(note)}</span>` : "");
   }
-  /** lines: [{name, color, values:[{time,value}], dashed, width, visible, zeroLine}] */
+  /** lines: [{name, color, values:[{time,value}], dash (0 solid, 1 dotted, 2 dashed), width, visible, zeroLine}] */
   function drawChart(key, unit, lines, keepRange) {
     const entry = getChart(key, unit);
     const range = keepRange && !entry.carried ? entry.chart.timeScale().getVisibleLogicalRange() : null;   // a plot just built again is fitted afresh
@@ -941,7 +971,7 @@ if (typeof document !== "undefined") (() => {
     if (range) entry.chart.timeScale().setVisibleLogicalRange(range); else entry.chart.timeScale().fitContent();
     const box = $(`tg-${key}`);
     box.innerHTML = lines.map((l, i) => `<label><input type="checkbox" data-i="${i}" ${entry.series.get(l.name).visible ? "checked" : ""}>
-      <i class="${isDesk() ? ["", "dot", "dash"][l.dash || 0] : l.dashed ? "dash" : ""}" style="border-color:${l.color}"></i><span>${esc(l.name)}</span></label>`).join("");
+      <i class="${["", "dot", "dash"][l.dash || 0]}" style="border-color:${l.color}"></i><span>${esc(l.name)}</span></label>`).join("");
     for (const input of box.querySelectorAll("input")) input.onchange = () => {
       const s = entry.series.get(lines[+input.dataset.i].name);
       s.visible = input.checked; s.api.applyOptions({ visible: s.visible }); readout(entry);
@@ -1028,22 +1058,21 @@ if (typeof document !== "undefined") (() => {
       { name: bp.label, color: css("--leg2"), width: 1.5, values: toSeries(comb.times, comb.books[1] || []), visible: false, dash: 1 },
     ], keepRange);
 
-    // Desk: Total white, legs in one grey and fees and funding in another, each pair told apart by dash; BTC and PAXG as on the combined plot.
-    const desk = isDesk();
+    // Total in the main colour, legs in one grey and fees and funding in another, each pair told apart by dash; BTC and PAXG as on the combined plot.
     const bookLines = (b, coinsVisible) => {
       const s = b.sum;
       if (!s) return [];
       const lines = [{ name: "Total", color: css("--book"), width: 2.4, values: toSeries(s.times, s.total), zeroLine: true }];
       if (b.key === "emissions") {
-        lines.push({ name: "Long leg", color: css(desk ? "--s4" : "--up"), width: 1.5, values: toSeries(s.times, s.longs), visible: false });
-        lines.push({ name: "Short leg", color: css(desk ? "--s4" : "--down"), width: 1.5, values: toSeries(s.times, s.shorts), visible: false, dash: 2 });
+        lines.push({ name: "Long leg", color: css("--s4"), width: 1.5, values: toSeries(s.times, s.longs), visible: false });
+        lines.push({ name: "Short leg", color: css("--s4"), width: 1.5, values: toSeries(s.times, s.shorts), visible: false, dash: 2 });
       }
-      lines.push({ name: "Fees", color: css(desk ? "--s5" : "--muted"), width: 1.2, dashed: true, values: toSeries(s.times, s.fees) });
-      lines.push({ name: "Funding", color: css("--fund"), width: 1.2, dashed: true, values: toSeries(s.times, s.funding), dash: 2 });
+      lines.push({ name: "Fees", color: css("--s5"), width: 1.2, values: toSeries(s.times, s.fees) });
+      lines.push({ name: "Funding", color: css("--fund"), width: 1.2, values: toSeries(s.times, s.funding), dash: 2 });
       const coins = [...s.perCoin.entries()].sort((a, c) => Math.abs(c[1].at(-1)) - Math.abs(a[1].at(-1)));
       coins.forEach(([coin, cum], i) => lines.push({
         name: coin, width: 1.4, values: toSeries(s.times, Array.from(cum)), visible: coinsVisible,
-        color: coin === "BTC" ? css("--leg1") : coin === "PAXG" ? css("--leg2") : coinColor(i), dash: coin === "BTC" ? 2 : coin === "PAXG" ? 1 : 0 }));
+        color: coin === "BTC" ? css("--leg1") : coin === "PAXG" ? css("--leg2") : coinColor(i), dash: coin === "BTC" ? 2 : coin === "PAXG" ? 1 : coinDash(i) }));
       return lines;
     };
     drawChart("emissions", "$", bookLines(em, false), keepRange);
@@ -1071,8 +1100,8 @@ if (typeof document !== "undefined") (() => {
       ["uPnL", (p) => `<td class="${cls(p.upnl)}">${sUsd(p.upnl, 2)}</td>`],
       ["Funding", (p) => `<td class="${cls(p.funding)}">${sUsd(p.funding, 2)}</td>`],
     ];
-    // Desk leads with what a phone can show without scrolling: side, size and P&L. The book name goes last.
-    $("posTable").innerHTML = tableOf(cols, isDesk() ? [0, 2, 3, 5, 4, 6, 1] : [0, 1, 2, 3, 4, 5, 6], rows);
+    // Lead with what a phone can show without scrolling: side, size and P&L. The book name goes last.
+    $("posTable").innerHTML = tableOf(cols, [0, 2, 3, 5, 4, 6, 1], rows);
   }
 
   function renderDaily() {
@@ -1090,7 +1119,7 @@ if (typeof document !== "undefined") (() => {
         <td class="${cls(r.ret)}">${pct(r.ret)}</td><td class="${cls(r.pnl)}">${sUsd(r.pnl)}</td></tr>`).join("") + "</tbody>";
   }
 
-  /* ---- Desk furniture for the two hand-drawn plots: value axis on the right, dotted grid, solid zero line, axis tags ---- */
+  /* ---- furniture for the two hand-drawn plots: value axis on the right, dotted grid, solid zero line, axis tags ---- */
   const CRISP = { "shape-rendering": "crispEdges" };
   /** One value tick: a dotted grid line (solid and heavier at zero), a tick mark and its label on the right-hand axis. */
   function deskTick(svg, x0, x1, y, label, zero) {
@@ -1101,71 +1130,63 @@ if (typeof document !== "undefined") (() => {
   }
   /** The axis lines: the right edge and the foot of the plot. */
   const deskAxes = (svg, x0, x1, y0, y1) => svg.append(svgEl("path", { d: `M${x1},${y0}V${y1}H${x0}`, fill: "none", stroke: "var(--axis)", ...CRISP }));
-  /** A pointer-shaped tag on the right-hand axis with dark text: white for a last value, yellow for the crosshair. */
-  function deskTag(parent, x, y, label, fill = "#fff") {
+  /** A pointer-shaped tag on the right-hand axis: the tag colour for a last value, the crosshair colour for the crosshair. */
+  function deskTag(parent, x, y, label, fill = "var(--tag)") {
     parent.append(svgEl("path", { d: `M${x},${y}l6,-8h${AXIS_W - 9}v16h${9 - AXIS_W}z`, fill }));
     parent.append(svgEl("text", { x: x + 9, y: y + 4, class: "tag" }, label));
   }
-  /** Crosshair: dashed lines across the plot, the value in a yellow tag on the axis and the date in one at the foot. */
+  /** Crosshair: dashed lines across the plot, the value in a tag on the axis and the date in one at the foot. */
   function deskCross(g, cx, cy, [x0, x1, y0, y1], value, when) {
     const dash = { stroke: "var(--zero)", "stroke-dasharray": "3 3", ...CRISP };
     g.replaceChildren(svgEl("line", { x1: cx, x2: cx, y1: y0, y2: y1, ...dash }), svgEl("line", { x1: x0, x2: x1, y1: cy, y2: cy, ...dash }));
-    deskTag(g, x1 + 1, cy, value, "var(--warn-fill)");
+    deskTag(g, x1 + 1, cy, value, "var(--cross)");
     const w = when.length * 7 + 10, left = Math.max(x0, Math.min(x1 - w, cx - w / 2));
-    g.append(svgEl("rect", { x: left, y: y1 + 3, width: w, height: 16, fill: "var(--warn-fill)" }));
+    g.append(svgEl("rect", { x: left, y: y1 + 3, width: w, height: 16, fill: "var(--cross)" }));
     g.append(svgEl("text", { x: left + w / 2, y: y1 + 15, "text-anchor": "middle", class: "tag" }, when));
   }
 
   function barChart(svg, out, rows) {
     svg.replaceChildren();
     svg.ontouchstart = svg.ontouchmove = svg.onmousemove = null;
-    const desk = isDesk();
-    const H = 160, W = fit(svg, H), L = desk ? 8 : 52, R = desk ? AXIS_W : 12, T = 10, B = 24;
+    const H = 160, W = fit(svg, H), L = 8, R = AXIS_W, T = 10, B = 24;
     if (!rows.length) return;
     const vals = rows.map((r) => r.ret * 100);
     const ticks = niceTicks(Math.min(0, ...vals), Math.max(0, ...vals), 3);
     const lo = Math.min(ticks[0], ...vals), hi = Math.max(ticks[ticks.length - 1], ...vals);
     const Y = (v) => T + (H - T - B) * (1 - (v - lo) / (hi - lo || 1));
     const slot = (W - L - R) / rows.length, bw = Math.max(2, Math.min(28, slot - 2));
-    for (const t of ticks) {
-      if (desk) { if (t !== 0) deskTick(svg, L, W - R, Y(t), pp(t, 1), false); continue; }
-      svg.append(svgEl("line", { x1: L, x2: W - R, y1: Y(t), y2: Y(t), stroke: "var(--line)" }));
-      svg.append(svgEl("text", { x: L - 6, y: Y(t) + 3, "text-anchor": "end" }, t.toFixed(1) + "%"));
-    }
+    for (const t of ticks) if (t !== 0) deskTick(svg, L, W - R, Y(t), pp(t, 1), false);
     const cross = svgEl("g", { "pointer-events": "none" });
     const show = (i) => {
       const r = rows[i];
       paintReadout(out, short(r.date), [["", pct(r.ret)], ["", sUsd(r.pnl)]]);
-      if (desk) deskCross(cross, L + slot * (i + 0.5), Y(vals[i]), [L, W - R, T, H - B], pct(r.ret), short(r.date));
+      deskCross(cross, L + slot * (i + 0.5), Y(vals[i]), [L, W - R, T, H - B], pct(r.ret), short(r.date));
     };
     rows.forEach((r, i) => {
       const v = vals[i], x = L + slot * i + (slot - bw) / 2;
-      svg.append(svgEl("rect", { x, y: Math.min(Y(v), Y(0)), width: bw, height: Math.max(1, Math.abs(Y(v) - Y(0))), rx: desk ? 0 : 2, fill: v >= 0 ? "var(--up)" : "var(--down)" }));
+      svg.append(svgEl("rect", { x, y: Math.min(Y(v), Y(0)), width: bw, height: Math.max(1, Math.abs(Y(v) - Y(0))), rx: 0, fill: v >= 0 ? "var(--up)" : "var(--down)" }));
       const hit = svgEl("rect", { x: L + slot * i, y: T, width: slot, height: H - T - B, fill: "transparent" });
       const pick = () => show(i);
       hit.addEventListener("mouseenter", pick); hit.addEventListener("touchstart", pick, { passive: true });
       svg.append(hit);
     });
     const lastI = rows.length - 1, lastRow = rows[lastI];
-    // Dates along the foot. Desk prints one per 64px at most and never one that would run into the last.
-    const step = Math.max(1, Math.ceil(rows.length / (desk ? Math.max(1, Math.floor((W - L - R) / 64)) : 6)));
+    // Dates along the foot: one per 64px at most, and never one that would run into the last.
+    const step = Math.max(1, Math.ceil(rows.length / Math.max(1, Math.floor((W - L - R) / 64))));
     rows.forEach((r, i) => {
       if (!(i % step === 0 || i === lastI)) return;
-      if (!desk) { svg.append(svgEl("text", { x: L + slot * (i + 0.5), y: H - 6, "text-anchor": "middle" }, short(r.date))); return; }
       if (i !== lastI && (lastI - i) * slot < 56) return;
       svg.append(svgEl("text", i === lastI ? { x: W - R, y: H - 6, "text-anchor": "end" } : i === 0 ? { x: L, y: H - 6 } : { x: L + slot * (i + 0.5), y: H - 6, "text-anchor": "middle" }, short(r.date)));
     });
-    if (desk) {
-      deskTick(svg, L, W - R, Y(0), pp(0, 1), true);
-      deskAxes(svg, L, W - R, T, H - B);
-      deskTag(svg, W - R + 1, Y(vals[lastI]), pct(lastRow.ret));
-      svg.append(cross);
-      // Touch crosshair: slide a finger along the plot, the readout and the tags follow the nearest day.
-      svg.ontouchstart = svg.ontouchmove = svg.onmousemove = (ev) => {
-        const p = ev.touches ? ev.touches[0] : ev, box = svg.getBoundingClientRect();
-        show(Math.max(0, Math.min(lastI, Math.floor(((p.clientX - box.left) * W / box.width - L) / slot))));
-      };
-    }
+    deskTick(svg, L, W - R, Y(0), pp(0, 1), true);
+    deskAxes(svg, L, W - R, T, H - B);
+    deskTag(svg, W - R + 1, Y(vals[lastI]), pct(lastRow.ret));
+    svg.append(cross);
+    // Touch crosshair: slide a finger along the plot, the readout and the tags follow the nearest day.
+    svg.ontouchstart = svg.ontouchmove = svg.onmousemove = (ev) => {
+      const p = ev.touches ? ev.touches[0] : ev, box = svg.getBoundingClientRect();
+      show(Math.max(0, Math.min(lastI, Math.floor(((p.clientX - box.left) * W / box.width - L) / slot))));
+    };
     paintReadout(out, short(lastRow.date), [["", pct(lastRow.ret)], ["", sUsd(lastRow.pnl)]], "(today, partial)");
   }
 
@@ -1190,9 +1211,9 @@ if (typeof document !== "undefined") (() => {
       ["±100bp exit", (b) => `<td>${usd(b.bands[100][b.exit])}</td>`],
       ["Size / depth", (b) => `<td class="${b.ratio50 > 0.25 ? "down alarm" : ""}">${num(b.ratio50 * 100, 1)}%</td>`],
     ];
-    // Desk puts the risk figure beside the name, so it shows without scrolling, and marks the row whose ladder is drawn.
-    const marked = state.picked || (isDesk() ? worst.coin : null);
-    $("lobTable").innerHTML = tableOf(cols, isDesk() ? [0, 6, 1, 2, 3, 4, 5] : [0, 1, 2, 3, 4, 5, 6], sorted,
+    // The risk figure sits beside the name, so it shows without scrolling. The row whose ladder is drawn is marked.
+    const marked = state.picked || worst.coin;
+    $("lobTable").innerHTML = tableOf(cols, [0, 6, 1, 2, 3, 4, 5], sorted,
                                       (b) => `<tr class="pick${marked === b.coin ? " sel" : ""}" data-coin="${esc(b.coin)}">`);
     for (const tr of $("lobTable").querySelectorAll("tr.pick")) tr.onclick = () => { state.picked = tr.dataset.coin; renderLob(); };
     renderLadder(books.find((b) => b.coin === state.picked) || worst);
@@ -1202,8 +1223,7 @@ if (typeof document !== "undefined") (() => {
     const svg = $("ladderChart");
     svg.replaceChildren();
     $("ladderTitle").textContent = `Ladder · ${b.coin}`;
-    const desk = isDesk();
-    const H = 220, W = fit(svg, H), L = desk ? 8 : 56, R = desk ? AXIS_W : 12, T = 10, B = 24, BAND = 100;
+    const H = 220, W = fit(svg, H), L = 8, R = AXIS_W, T = 10, B = 24, BAND = 100;
     const X = (bp) => L + (W - L - R) * (bp + BAND) / (2 * BAND);
     const cum = (side, dir) => {
       let c = 0; const pts = [];
@@ -1217,15 +1237,11 @@ if (typeof document !== "undefined") (() => {
     const ymax = Math.max(top, ticks[ticks.length - 1]);
     const Y = (v) => T + (H - T - B) * (1 - v / ymax);
     const money = (v) => (v >= 1000 ? `$${(v / 1000).toFixed(v >= 1e5 ? 0 : 1)}k` : `$${v}`);
-    for (const t of ticks) {
-      if (desk) { deskTick(svg, L, W - R, Y(t), money(t), t === 0); continue; }
-      svg.append(svgEl("line", { x1: L, x2: W - R, y1: Y(t), y2: Y(t), stroke: "var(--line)" }));
-      svg.append(svgEl("text", { x: L - 6, y: Y(t) + 3, "text-anchor": "end" }, money(t)));
-    }
+    for (const t of ticks) deskTick(svg, L, W - R, Y(t), money(t), t === 0);
     for (const bp of [-100, -50, 0, 50, 100]) {
-      if (desk && Math.abs(bp) < BAND) svg.append(svgEl("line", { x1: X(bp), x2: X(bp), y1: T, y2: H - B, stroke: "var(--grid)", "stroke-dasharray": "2 3", ...CRISP }));
+      if (Math.abs(bp) < BAND) svg.append(svgEl("line", { x1: X(bp), x2: X(bp), y1: T, y2: H - B, stroke: "var(--grid)", "stroke-dasharray": "2 3", ...CRISP }));
       svg.append(svgEl("text", { x: X(bp), y: H - 6, "text-anchor": bp === -100 ? "start" : bp === 100 ? "end" : "middle" },
-                       desk ? `${bp > 0 ? "+" : bp < 0 ? "−" : ""}${Math.abs(bp)}bp` : `${bp > 0 ? "+" : ""}${bp}bp`));
+                       `${bp > 0 ? "+" : bp < 0 ? "−" : ""}${Math.abs(bp)}bp`));
     }
     const step = (pts, color, dashed) => {
       if (!pts.length) return;
@@ -1234,10 +1250,10 @@ if (typeof document !== "undefined") (() => {
       svg.append(svgEl("path", { d: d + `L${X(pts[pts.length - 1].bp).toFixed(1)},${Y(0).toFixed(1)}Z`, fill: color, "fill-opacity": 0.14, stroke: "none" }));
       svg.append(svgEl("path", { d, fill: "none", stroke: color, "stroke-width": 2, ...(dashed ? { "stroke-dasharray": "6 3" } : {}) }));
     };
-    // Desk tells the sides apart by stroke as well as place: bids solid, asks dashed, our size dotted.
-    step(bids, "var(--bid)", false); step(asks, "var(--ask)", desk);
-    if (b.notional) svg.append(svgEl("line", { x1: L, x2: W - R, y1: Y(Math.abs(b.notional)), y2: Y(Math.abs(b.notional)), stroke: "var(--accent)", "stroke-width": 1.6, "stroke-dasharray": desk ? "2 3" : "5 4" }));
-    if (desk) deskAxes(svg, L, W - R, T, H - B);
+    // The sides are told apart by stroke as well as place: bids solid, asks dashed, our size dotted.
+    step(bids, "var(--bid)", false); step(asks, "var(--ask)", true);
+    if (b.notional) svg.append(svgEl("line", { x1: L, x2: W - R, y1: Y(Math.abs(b.notional)), y2: Y(Math.abs(b.notional)), stroke: "var(--accent)", "stroke-width": 1.6, "stroke-dasharray": "2 3" }));
+    deskAxes(svg, L, W - R, T, H - B);
     paintReadout($("ladderReadout"), "", [["mid", b.mid.toPrecision(6)], ["spread", `${num(b.spreadBp, 1)}bp`], ["ours", sUsd(b.notional)], ["exit via", `${b.exit}s`]]);
   }
 
@@ -1255,7 +1271,7 @@ if (typeof document !== "undefined") (() => {
       }
       flow.life = new FlowLife({ makeEngine: flow.sim ? () => new FlowSim(flow.fixture) : () => FlowEngine.createEngine({ phone: true, proxyBase: null }) });
       flow.life.setPage(!document.hidden);
-      flow.ui = FlowUI.mount($("view-flow"), flow.life, { theme: state.theme, offVenues: flow.sim ? [] : ["KuCoin"],
+      flow.ui = FlowUI.mount($("view-flow"), flow.life, { theme: state.skin, offVenues: flow.sim ? [] : ["KuCoin"],
                                                           footer: flow.sim ? "Replay of a recorded 20 minute session. " : "" });
     }
     if (state.tab !== "flow") return;
@@ -1345,46 +1361,30 @@ if (typeof document !== "undefined") (() => {
     state.bar = btn.dataset.bar; store.set(BAR_KEY, state.bar); paintBars();
     state.views = {}; state.loadedAt = {}; show(state.tab); refresh(true);
   };
-  function applyTheme() {
-    document.documentElement.setAttribute("data-theme", state.theme);
-    for (const b of document.querySelectorAll("[data-theme-pick]")) b.setAttribute("aria-pressed", String(b.dataset.themePick === state.theme));
-    // Two labels read differently in Desk (mixed case, a shorter tab name). Only the text node changes.
-    for (const el of document.querySelectorAll("[data-desk]")) el.lastChild.nodeValue = isDesk() ? el.dataset.desk : el.dataset.classic;
+  /** Put state.skin on the page: the attribute the token blocks key on, the picker, the browser's theme colour, the plots, the Flow tab. */
+  function applySkin() {
+    const root = document.documentElement;
+    if (state.skin === "desk") root.removeAttribute("data-skin"); else root.setAttribute("data-skin", state.skin);
+    for (const b of document.querySelectorAll("[data-skin-pick]")) b.setAttribute("aria-pressed", String(b.dataset.skinPick === state.skin));
     const meta = document.querySelector('meta[name="theme-color"]');
     if (meta) meta.setAttribute("content", css("--bg"));
-    let rebuilt = false;
+    // A plot takes its colours when it is made, and its zero line and axis tags keep them. So each plot is built again and
+    // fitted afresh, exactly as on a fresh load. Which series were switched on is carried over; a zoom is not.
     for (const [key, c] of Object.entries(charts)) {
-      if (c.desk === isDesk()) { c.chart.applyOptions(chartTheme()); continue; }
-      // Entering or leaving Desk changes type size and the width of the value axis, so the plot is built again and fitted
-      // afresh, exactly as on a fresh load. Which series were switched on is carried over; a zoom is not.
       carried[key] = { shown: new Map([...c.series].map(([name, s]) => [name, s.visible])) };
       c.chart.remove();
       delete charts[key];
-      rebuilt = true;
     }
-    const redraw = () => {
-      if (state.tab !== "lob" && state.views[state.tab]) renderPnl(true);
-      if (state.tab === "lob" && state.books) renderLob();
-    };
-    // Desk never asks for the web font the other looks draw their plots in. Leaving Desk, wait for it (briefly) before the
-    // plots are built again: the library measures a label's place once, and in the fallback face it lands a fraction of a pixel off.
-    if (rebuilt && !isDesk() && document.fonts) {
-      Promise.race([document.fonts.load(`11px ${WEB_FONT}`), new Promise((done) => setTimeout(done, FONT_WAIT_MS))]).then(redraw, redraw);
-    } else redraw();
-    if (flow.ui) flow.ui.setTheme(state.theme);
+    if (state.tab !== "lob" && state.views[state.tab]) renderPnl(true);
+    if (state.tab === "lob" && state.books) renderLob();
+    if (flow.ui) flow.ui.setTheme(state.skin);
   }
-  for (const b of document.querySelectorAll("[data-theme-pick]")) b.onclick = () => {
-    state.theme = b.dataset.themePick; store.set(THEME_KEY, state.theme); applyTheme();
+  for (const b of document.querySelectorAll("[data-skin-pick]")) b.onclick = () => {
+    store.set(SKIN_KEY, b.dataset.skinPick);
+    if (b.dataset.skinPick === state.skin) return;
+    state.skin = b.dataset.skinPick; applySkin();
   };
   for (const btn of $("tabList").querySelectorAll("button")) btn.onclick = () => { show(btn.dataset.tab); refresh(); scrollTo(0, 0); };
-  // A Flow sheet dims the page behind it, and in the older looks that dim layer lies over the tabs. A tap on a tab through
-  // it still changes tab, so one tap leaves Flow in every look. (In Desk the tab bar sits above the dim layer.)
-  $("view-flow").addEventListener("click", (e) => {
-    if (!e.target.classList.contains("scrim")) return;
-    const under = (b) => { const r = b.getBoundingClientRect(); return e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom; };
-    const tab = [...$("tabList").querySelectorAll("button")].find(under);
-    if (tab) tab.click();
-  });
   for (const btn of document.querySelectorAll("[data-fit]")) btn.onclick = () => charts[btn.dataset.fit]?.chart.timeScale().fitContent();
   document.addEventListener("visibilitychange", () => {
     if (flow.life) flow.life.setPage(!document.hidden);
@@ -1395,9 +1395,8 @@ if (typeof document !== "undefined") (() => {
   const savedBar = store.get(BAR_KEY);
   if (savedBar && ["auto", "1m", "5m", "15m", "1h"].includes(savedBar)) state.bar = savedBar;
   paintBars();
-  const savedTheme = store.get(THEME_KEY);
-  state.theme = savedTheme && THEMES[savedTheme] ? savedTheme : DEFAULT_THEME;
-  applyTheme();
+  state.skin = LOB.skinFor(store.get(SKIN_KEY), store.get(THEME_KEY));   // nobody loses a choice: an older look opens in its skin
+  applySkin();
   const savedTab = store.get(TAB_KEY);
   if (savedTab && (REFRESH_MS[savedTab] || savedTab === "flow")) state.tab = savedTab;
   if (query.get("tab") && (REFRESH_MS[query.get("tab")] || query.get("tab") === "flow")) state.tab = query.get("tab");

@@ -378,8 +378,7 @@
     const WINDOWS = { "5m": 300e3, "12m": 720e3, "20m": 1200e3 };
     const PREF_KEY = "lob.flow.v1";
     const STALE_MS = 3500, TAPE_ROWS = 30, BOOK_LEVELS = 12;
-    const OK = { dark: "#3ccf8e", light: "#0b8a55", read: "#161616", warm: "#ffd27a", mono: "#ffffff", desk: "#FFFFFF" };   // LIVE badge: app chrome
-    const SKIN = { terminal: "desk" };   // the page's name for a look -> the shared token set, where the two differ
+    const SKIN = { terminal: "desk" };   // the page's switch for its UI is data-theme="terminal": that name means the desk tokens too
     const OFF_WHY = {
       KuCoin: "KuCoin needs a connection token from a server, and this phone app has no server. So KuCoin is off on the phone and is in no total. It is about 1% of BTC perp volume.",
     };
@@ -411,8 +410,7 @@
       };
       const prefs = Object.assign({ win: "20m", tape: "all", ev: "all", step: 25, closed: {}, sizes: false }, store.get(PREF_KEY) || {});
       const savePrefs = () => store.set(PREF_KEY, prefs);
-      let tok = null, st = null, lastWall = 0, theme = opts.theme || "dark", pal = null, active = true;
-      let desk = false;   // the Desk look: charts draw 12px text in the page's face, with the value axis and its tags on the right
+      let st = null, lastWall = 0, theme = opts.theme || "desk", pal = null, active = true;
       let scrubX = null, tapeHold = false, tapeResume = null, frozenNew = 0, tapeSeen = new Set(), firstTape = true, toastTimer = null;
       const tapeNodes = new Map();
 
@@ -433,20 +431,18 @@
       /** Write a theme's colours as CSS variables on root from FlowShared.Tokens (roles -> this page's variable names). */
       function themeVars(name) {
         const t = FlowShared.Tokens.get(name), r = root.style;
-        tok = t;
         const v = { "--bg": t.bg, "--panel": t.panel, "--strip": t.strip, "--line": t.rule, "--ink": t.ink, "--ink2": t.ink2, "--muted": t.muted,
           "--accent": t.label, "--on-accent": t.onAlert, "--alert": t.alert, "--on-alert": t.onAlert, "--warn": t.warn,
           "--buy": t.buy, "--sell": t.sell, "--bid": t.buy, "--ask": t.sell,
-          "--fuel": t.fuel, "--fuel2": t.fuelWeak, "--maker": t.maker, "--hatch": t.hatchSell ? "1" : "0", "--ok": OK[name] || t.ink2 };
+          "--fuel": t.fuel, "--fuel2": t.fuelWeak, "--maker": t.maker, "--hatch": t.hatchSell ? "1" : "0", "--ok": t.ok };
         for (const k in v) r.setProperty(k, v[k]);
         r.colorScheme = t.mode;
         root.dataset.hatch = t.hatchSell ? "1" : "0";
       }
-      /** Apply one of the app's looks (terminal = Desk, dark, light, read, warm, mono) to this tab. */
+      /** Apply a skin (desk, day, mono, read or warm) to this tab. An unknown name gets Desk. */
       function setTheme(name) {
         const skin = SKIN[name] || name;
-        theme = FlowShared.Tokens.themes[skin] ? skin : "dark";
-        desk = theme === "desk";
+        theme = Object.hasOwn(FlowShared.Tokens.themes, skin) ? skin : "desk";
         themeVars(theme); readPalette();
         for (const c of canvases) c.draw();
         if (st && st.seconds.length) renderVenues();
@@ -470,12 +466,11 @@
         return ctx.createPattern(c, "repeat");
       }
       const sellFill = (ctx) => (pal.hatch ? hatch(ctx, pal.sell) : pal.sell);
-      const font = (px, w = 400) => (desk ? `${w >= 600 ? 700 : 400} ${Math.max(12, px)}px ${pal.mono}` : `${w} ${px}px ${pal.mono}`);
+      const font = (px, w = 400) => `${w >= 600 ? 700 : 400} ${Math.max(12, px)}px ${pal.mono}`;   // charts draw 12px text or larger in the page's face
       // A chart's waiting text is drawn at x = 0 and assumes a left-aligned context. After a live frame the context is left
-      // right-aligned, so on a fresh engine (resume after a pause) the words fall off the left edge. Desk sets the alignment.
-      // The older looks are left exactly as the live page draws them; drop the test to fix them too.
-      const waitAlign = (ctx) => { if (desk) ctx.textAlign = "left"; };
-      /** Desk: a value tag sitting on the right axis at height y. White fill for the main series, else outlined in the series colour. */
+      // right-aligned, so on a fresh engine (resume after a pause) the words would fall off the left edge.
+      const waitAlign = (ctx) => { ctx.textAlign = "left"; };
+      /** A value tag sitting on the right axis at height y. Filled in the value colour for the main series, else outlined in the series colour. */
       function axisTag(ctx, x, w, y, text, colour) {
         const h = 16, x0 = x + 1, x1 = x + w - 1;
         ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x0 + 6, y - h / 2); ctx.lineTo(x1, y - h / 2); ctx.lineTo(x1, y + h / 2); ctx.lineTo(x0 + 6, y + h / 2); ctx.closePath();
@@ -581,7 +576,7 @@
       let net = null;
       const netView = canvasView($.netCv, (ctx, W, H) => {
         const s = net; if (!s || s.n < 2) { ctx.fillStyle = pal.muted; ctx.font = font(12); waitAlign(ctx); ctx.fillText("Waiting for data…", 0, 20); return; }
-        const R = desk ? 72 : 64, AX = desk ? 18 : 16, gap = 8, plotW = W - R;
+        const R = 72, AX = 18, gap = 8, plotW = W - R;
         const lanes = [{ key: "px", h: 0.38 }, { key: "perp", h: 0.38 }, { key: "spot", h: 0.24 }];
         const avail = H - AX - gap * 2;
         let y0 = 0;
@@ -607,23 +602,16 @@
             B.forEach((b, i) => { const x = X(b.t); i ? ctx.lineTo(x, Y(b.hi)) : ctx.moveTo(x, Y(b.hi)); });
             for (let i = B.length - 1; i >= 0; i--) ctx.lineTo(X(B[i].t), Y(B[i].lo));
             ctx.closePath(); ctx.fill(); ctx.globalAlpha = 1;
-            ctx.strokeStyle = desk ? pal.ink : pal.ink2; ctx.lineWidth = desk ? 2 : 1.25; ctx.beginPath();
+            ctx.strokeStyle = pal.ink; ctx.lineWidth = 2; ctx.beginPath();
             B.forEach((b, i) => { const x = X(b.t), y = Y(b.c); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
             ctx.stroke();
-            if (desk) {   // range on the axis, the last price as a tag on it
-              ctx.font = font(12); ctx.fillStyle = pal.ink2; ctx.textAlign = "left";
-              ctx.fillText(Fmt.px(hi - pad, 0), plotW + 9, y0 + 13); ctx.fillText(Fmt.px(lo + pad, 0), plotW + 9, y0 + lh - 4);
-              axisTag(ctx, plotW, R, Math.min(y0 + lh - 24, Math.max(y0 + 24, Y(arr[s.n - 1]))), Fmt.px(arr[s.n - 1], 0), null);
-            } else {
-              ctx.font = font(10); ctx.fillStyle = pal.muted; ctx.textAlign = "left";
-              ctx.fillText(Fmt.px(hi - pad, 0), plotW + 6, y0 + 12); ctx.fillText(Fmt.px(lo + pad, 0), plotW + 6, y0 + lh - 5);
-              ctx.fillStyle = pal.ink; ctx.font = font(11, 500);
-              ctx.fillText(Fmt.px(arr[s.n - 1], 0), plotW + 6, Math.min(y0 + lh - 18, Math.max(y0 + 26, Y(arr[s.n - 1]) + 4)));
-            }
+            // range on the axis, the last price as a tag on it
+            ctx.font = font(12); ctx.fillStyle = pal.ink2; ctx.textAlign = "left";
+            ctx.fillText(Fmt.px(hi - pad, 0), plotW + 9, y0 + 13); ctx.fillText(Fmt.px(lo + pad, 0), plotW + 9, y0 + lh - 4);
+            axisTag(ctx, plotW, R, Math.min(y0 + lh - 24, Math.max(y0 + 24, Y(arr[s.n - 1]))), Fmt.px(arr[s.n - 1], 0), null);
           } else {
             const zy = Y(0);
-            if (desk) { ctx.strokeStyle = pal.zero; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(0, zy); ctx.lineTo(plotW, zy); ctx.stroke(); ctx.lineWidth = 1; }
-            else { ctx.setLineDash([2, 3]); ctx.strokeStyle = pal.muted; ctx.beginPath(); ctx.moveTo(0, zy); ctx.lineTo(plotW, zy); ctx.stroke(); ctx.setLineDash([]); }
+            ctx.strokeStyle = pal.zero; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(0, zy); ctx.lineTo(plotW, zy); ctx.stroke(); ctx.lineWidth = 1;
             for (const [sign, color] of [[1, pal.buy], [-1, pal.sell]]) {   // fill above/below zero by clipping
               ctx.save(); ctx.beginPath();
               if (sign > 0) ctx.rect(0, y0, plotW, zy - y0); else ctx.rect(0, zy, plotW, y0 + lh - zy);
@@ -637,27 +625,21 @@
               ctx.stroke(); ctx.restore();
             }
             const end = arr[s.n - 1];
-            if (desk) {   // the lane's name in amber, its running total as a signed tag on the axis
-              ctx.textAlign = "left"; ctx.font = font(12); ctx.fillStyle = pal.accent;
-              ctx.fillText(ln.key === "perp" ? "Perps" : "Spot", plotW + 9, y0 + 13);
-              axisTag(ctx, plotW, R, Math.min(y0 + lh - 9, Math.max(y0 + 26, Y(end))), Fmt.sUsd(end), end >= 0 ? pal.buy : pal.sell);
-            } else {
-              ctx.textAlign = "left"; ctx.font = font(10, 600); ctx.fillStyle = pal.muted;
-              ctx.fillText(ln.key === "perp" ? "PERPS" : "SPOT", plotW + 6, y0 + 12);
-              ctx.font = font(11, 500); ctx.fillStyle = end >= 0 ? pal.buy : pal.sell;
-              ctx.fillText(Fmt.sUsd(end), plotW + 6, y0 + 27);
-            }
+            // the lane's name in the label colour, its running total as a signed tag on the axis
+            ctx.textAlign = "left"; ctx.font = font(12); ctx.fillStyle = pal.accent;
+            ctx.fillText(ln.key === "perp" ? "Perps" : "Spot", plotW + 9, y0 + 13);
+            axisTag(ctx, plotW, R, Math.min(y0 + lh - 9, Math.max(y0 + 26, Y(end))), Fmt.sUsd(end), end >= 0 ? pal.buy : pal.sell);
           }
           ln.Y = Y; ln.y0 = y0; ln.lh = lh;
           y0 += lh + gap;
         }
         const x0 = X(s.t[0]);   // the window is not full yet
         if (x0 > 2) { ctx.fillStyle = pal.muted; ctx.font = font(10); ctx.textAlign = "left"; ctx.fillText("no data yet", 2, avail * 0.38 + gap + 14); }
-        if (desk) {   // axis lines: value axis on the right, time along the foot
+        {   // axis lines: value axis on the right, time along the foot
           const ay = Math.round(H - AX) + 0.5;
           ctx.strokeStyle = pal.ink; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(plotW + 0.5, 0); ctx.lineTo(plotW + 0.5, ay); ctx.lineTo(0, ay); ctx.stroke();
         }
-        ctx.font = font(10); ctx.fillStyle = desk ? pal.ink : pal.muted;   // UTC clock ticks, same clock as the tape
+        ctx.font = font(10); ctx.fillStyle = pal.ink;   // UTC clock ticks, same clock as the tape
         const span = s.to - s.from, stepMs = (span > 900e3 ? 5 : span > 400e3 ? 3 : 1) * 60e3;
         for (let t = Math.ceil(s.from / stepMs) * stepMs; t <= s.to; t += stepMs) {
           const x = X(t); if (x > plotW - 30) continue;
@@ -668,8 +650,8 @@
           const tx = s.from + (Math.max(0, Math.min(plotW, scrubX)) / plotW) * (s.to - s.from);
           let i = 0; while (i < s.n - 1 && s.t[i + 1] <= tx) i++;
           const x = X(s.t[i]);
-          ctx.strokeStyle = desk ? pal.warn : pal.ink; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(x + 0.5, 0); ctx.lineTo(x + 0.5, H - AX); ctx.stroke();
-          for (const ln of lanes) { ctx.fillStyle = desk ? pal.warn : pal.ink; ctx.beginPath(); ctx.arc(x, ln.Y(s[ln.key][i]), 3, 0, 7); ctx.fill(); }
+          ctx.strokeStyle = pal.warn; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(x + 0.5, 0); ctx.lineTo(x + 0.5, H - AX); ctx.stroke();
+          for (const ln of lanes) { ctx.fillStyle = pal.warn; ctx.beginPath(); ctx.arc(x, ln.Y(s[ln.key][i]), 3, 0, 7); ctx.fill(); }
           setReadout(i);
         }
       });
@@ -790,7 +772,7 @@
         L.rows.forEach((r, k) => {
           const y = k * rh, cy = y + rh / 2;
           ctx.font = font(11); ctx.textAlign = "right";
-          if (r.kind === "empty") { ctx.fillStyle = desk ? pal.muted : pal.line; ctx.fillText(Fmt.px(r.px, 0), PX - 6, cy); ctx.fillStyle = pal.muted; ctx.fillText("–", W - 16, cy); return; }
+          if (r.kind === "empty") { ctx.fillStyle = pal.muted; ctx.fillText(Fmt.px(r.px, 0), PX - 6, cy); ctx.fillStyle = pal.muted; ctx.fillText("–", W - 16, cy); return; }
           if (r.kind === "crossed") {
             // both sides rest here: venues out of step. Muted, split bar (ask on top, bid below), labelled.
             ctx.strokeStyle = pal.fuel2; ctx.lineWidth = 1; ctx.setLineDash([2, 2]);
@@ -840,47 +822,9 @@
       /* ---------- fuel (canvas) ---------- */
       const fuelView = canvasView($.fuelCv, (ctx, W, H) => {
         const f = st.fuel; if (!f || !f.levels.length) { ctx.fillStyle = pal.muted; ctx.font = font(12); waitAlign(ctx); ctx.fillText(f ? "No clusters within range." : "Fuel model loading…", 0, 20); return; }
-        if (desk) { fuelDesk(ctx, W, H, f); return; }
-        const P = st.px, span = 0.06, hiP = P * (1 + span), loP = P * (1 - span);
-        const stops = f.stops || [], AX = 52, STOPS = stops.length ? 40 : 0, top = 6, bot = H - 6;
-        const Y = (p) => top + (bot - top) * (hiP - p) / (hiP - loP);
-        const LBL = 92, barMax = W - AX - STOPS - LBL - 8, max = Math.max(...f.levels.map((l) => l.usd));
-        ctx.font = font(10); ctx.textBaseline = "middle";
-        for (let pc = -6; pc <= 6; pc += 2) {
-          const y = Y(P * (1 + pc / 100));
-          ctx.strokeStyle = pal.line; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(AX, Math.round(y) + 0.5); ctx.lineTo(W, Math.round(y) + 0.5); ctx.stroke();
-          if (pc) { ctx.fillStyle = pal.muted; ctx.textAlign = "right"; ctx.fillText(`${pc > 0 ? "+" : Fmt.MINUS}${Math.abs(pc)}%`, AX - 6, y); }
-        }
-        if (stops.length) {   // HL stops column (not scanned in phone mode)
-          ctx.fillStyle = pal.muted; ctx.textAlign = "center"; ctx.fillText("HL", W - STOPS / 2, top + 4);
-          const smax = Math.max(...stops.map((s) => s.usd), 1);
-          for (const s of stops) {
-            if (s.px > hiP || s.px < loP) continue;
-            const y = Y(s.px), len = 4 + (s.usd / smax) * (STOPS - 10);
-            ctx.fillStyle = pal.fuel2; ctx.fillRect(W - STOPS + 4, y - 1, len, 2);
-          }
-        }
-        const ranked = [...f.levels].sort((a, b) => b.usd - a.usd).slice(0, 5).map((l) => l.px);
-        const labelled = [];   // y of labels drawn; biggest first wins a slot
-        const wantLabel = new Set([...f.levels].filter((l) => l.px <= hiP && l.px >= loP && (l.armed || ranked.includes(l.px)))
-          .sort((a, b) => b.usd - a.usd).filter((l) => { const y = Y(l.px); if (labelled.some((u) => Math.abs(u - y) < 13)) return false; labelled.push(y); return true; }).map((l) => l.px));
-        for (const l of f.levels) {
-          if (l.px > hiP || l.px < loP) continue;
-          const y = Y(l.px), len = Math.max(2, (l.usd / max) * barMax);
-          if (l.armed) { ctx.fillStyle = pal.fuel; ctx.fillRect(AX + 4, y - 3.5, len, 7); }
-          else { ctx.strokeStyle = pal.fuel2; ctx.lineWidth = 1.25; if (tok && tok.fuelStyle === "dots") ctx.setLineDash([2, 2]); ctx.strokeRect(AX + 4.5, y - 3, len - 1, 6); ctx.setLineDash([]); }
-          if (wantLabel.has(l.px)) {
-            ctx.fillStyle = pal.ink2; ctx.textAlign = "left"; ctx.font = font(10, l.armed ? 600 : 400);
-            ctx.fillText(`${Fmt.usd(l.usd)} ${Fmt.pct((l.px / P - 1) * 100, 1)}`, AX + 10 + barMax, y);
-            ctx.strokeStyle = pal.line; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(AX + 6 + len, Math.round(y) + 0.5); ctx.lineTo(AX + 6 + barMax, Math.round(y) + 0.5); ctx.stroke();
-          }
-        }
-        const py = Y(P);
-        ctx.strokeStyle = pal.ink; ctx.lineWidth = 1; ctx.setLineDash([4, 3]); ctx.beginPath(); ctx.moveTo(AX, py); ctx.lineTo(W - STOPS, py); ctx.stroke(); ctx.setLineDash([]);
-        ctx.fillStyle = pal.ink; ctx.font = font(11, 600); ctx.textAlign = "right"; ctx.fillText(Fmt.px(P, 0), AX - 4, py);
-        ctx.textBaseline = "alphabetic";
+        fuelDesk(ctx, W, H, f);
       });
-      /** Desk: the same clusters, labels and scale as below, with the price axis on the right as on every Desk chart. */
+      /** The clusters as bars from the left with their labels, the price axis on the right as on every chart here. */
       function fuelDesk(ctx, W, H, f) {
         const P = st.px, span = 0.06, hiP = P * (1 + span), loP = P * (1 - span);
         const stops = f.stops || [], AXW = 62, STOPS = stops.length ? 40 : 0, top = 6, bot = H - 6, ax = W - AXW;

@@ -406,48 +406,35 @@
 
   /* ════════════════════════════════════════════════════════════════════════
      Tokens: semantic roles. UIs map roles to CSS variables; they never pick raw colours.
-     buy/sell are the validated pair; fuel is neutral; alert/warn is amber (stale and down use it, never sell red).
-     read (greyscale e-ink) and warm (no blue light) bend "buy = blue": read uses ink vs hatched grey,
-     warm uses a pale blue against red-orange. Both still pass the checks below.
+     One entry a skin of the phone page: desk, day, mono, read, warm. buy/sell are the validated pair; fuel is neutral;
+     alert/warn is the caution colour (stale and down use it, never the sell colour). Every entry passes the checks below.
      ════════════════════════════════════════════════════════════════════════ */
   const T = (o) => Object.freeze(o);
   const themes = {
-    night: T({ mode: "dark", bg: "#000000", panel: "#000000", raise: "#0e0e0d", strip: "#1c1c1c", rule: "#333330", hair: "#1d1d1b",
-      ink: "#ffffff", ink2: "#e6e4dc", muted: "#8f8d86", faint: "#77766f", label: "#ffa028",
-      buy: "#3987e5", sell: "#e66767", flat: "#77766f", fuel: "#e6e4dc", fuelWeak: "#8f8d86", maker: "#e6e4dc",
-      alert: "#ffa028", onAlert: "#000000", warn: "#ffa028", hatchSell: false }),
-    day: T({ mode: "light", bg: "#fafaf8", panel: "#ffffff", raise: "#f4f3ef", strip: "#efeee9", rule: "#d9d8d2", hair: "#efeee9",
-      ink: "#1d1d1b", ink2: "#3b3b37", muted: "#6f6e68", faint: "#6f6e68", label: "#8a4f00",
-      buy: "#1f63c6", sell: "#c23b3b", flat: "#8a8983", fuel: "#3b3b37", fuelWeak: "#6f6e68", maker: "#3b3b37",
-      alert: "#8a4f00", onAlert: "#ffffff", warn: "#8a4f00", hatchSell: false }),
-    dark: T({ mode: "dark", bg: "#050607", panel: "#0b0d0f", raise: "#14171a", strip: "#101315", rule: "#262a2f", hair: "#16191c",
-      ink: "#e6e8eb", ink2: "#a3aab3", muted: "#8a929c", faint: "#7a828c", label: "#ffa028",
-      buy: "#4a90ea", sell: "#ff6b6b", flat: "#6b737c", fuel: "#c9ced4", fuelWeak: "#8a929c", maker: "#c9ced4",
-      alert: "#ffa028", onAlert: "#000000", warn: "#ffa028", hatchSell: false }),
-    light: T({ mode: "light", bg: "#f4f4f1", panel: "#ffffff", raise: "#ebebe7", strip: "#e9e9e5", rule: "#d6d6d0", hair: "#e9e9e5",
-      ink: "#121417", ink2: "#3d4450", muted: "#5f6670", faint: "#5f6670", label: "#8a4f00",
-      buy: "#1f63c6", sell: "#c23b3b", flat: "#8a8f96", fuel: "#3d4450", fuelWeak: "#5f6670", maker: "#3d4450",
-      alert: "#8a4f00", onAlert: "#ffffff", warn: "#8a4f00", hatchSell: false }),
-    read: T({ mode: "light", bg: "#ececec", panel: "#f6f6f6", raise: "#e2e2e2", strip: "#e2e2e2", rule: "#c4c4c4", hair: "#dddddd",
-      ink: "#161616", ink2: "#3a3a3a", muted: "#545454", faint: "#545454", label: "#161616",
-      buy: "#161616", sell: "#5c5c5c", flat: "#9a9a9a", fuel: "#3a3a3a", fuelWeak: "#545454", maker: "#3a3a3a",
-      alert: "#161616", onAlert: "#ececec", warn: "#161616", hatchSell: true }),
-    warm: T({ mode: "dark", bg: "#070403", panel: "#0d0806", raise: "#170e0a", strip: "#140c08", rule: "#3a2418", hair: "#1c110b",
-      ink: "#ffb870", ink2: "#d98f4e", muted: "#b0784a", faint: "#a8744a", label: "#ffd27a",
-      buy: "#9db7ff", sell: "#ff5a3c", flat: "#8a6a50", fuel: "#d98f4e", fuelWeak: "#b0784a", maker: "#d98f4e",
-      alert: "#ffd27a", onAlert: "#070403", warn: "#ffd27a", hatchSell: false }),
-    // Pure terminal: zero hue. Buy = bright white, solid. Sell = mid grey, hollow or hatched (sellStyle).
-    // Alerts are inverse video (black on white). Fuel is a dotted/stippled grey, distinct from both.
-    mono: T({ mode: "dark", bg: "#000000", panel: "#000000", raise: "#111111", strip: "#161616", rule: "#3a3a3a", hair: "#1a1a1a",
-      ink: "#ffffff", ink2: "#d4d4d4", muted: "#9a9a9a", faint: "#858585", label: "#bdbdbd",
-      buy: "#ffffff", sell: "#8f8f8f", flat: "#3d3d3d", fuel: "#b8b8b8", fuelWeak: "#858585", maker: "#d4d4d4",
-      alert: "#ffffff", onAlert: "#000000", warn: "#ffffff", hatchSell: true, sellStyle: "hatch", fuelStyle: "dots", noHue: true }),
-    // Desk: the terminal look (the page says data-theme="terminal"). Same values as the desktop page's "desk" entry, so the
-    // checks below cover it. Up is green and down is red here, unlike the other looks, and always carries a sign or an arrow.
+    // Desk: the phone page's one UI (it says data-theme="terminal"). Same values as the desktop page's "desk" entry, so the
+    // checks below cover it. Up is green and down is red, and always carries a sign or an arrow.
     desk: T({ mode: "dark", bg: "#000000", panel: "#000000", raise: "#0C0C0C", strip: "#191919", rule: "#505050", hair: "#232323",
       ink: "#FFFFFF", ink2: "#D7D7D7", muted: "#A5A5A5", faint: "#8C8C8C", label: "#FFA028",
       buy: "#50F06E", sell: "#FF3D58", flat: "#8C8C8C", fuel: "#D7D7D7", fuelWeak: "#A5A5A5", maker: "#D7D7D7",
-      alert: "#FFE100", onAlert: "#000000", warn: "#FFE100", hatchSell: false }),
+      alert: "#FFE100", onAlert: "#000000", warn: "#FFE100", hatchSell: false, ok: "#FFFFFF" }),
+    // Skins of Desk (the page says data-skin): the same roles in other colours. Values are the page's own skin tokens.
+    // Mono and Read have no hue: sells are hatched and italic, and each keeps its sign or its arrow.
+    day: T({ mode: "light", bg: "#FFFFFF", panel: "#FFFFFF", raise: "#F1F1F1", strip: "#E3E3E3", rule: "#8A8A8A", hair: "#DADADA",
+      ink: "#000000", ink2: "#2A2A2A", muted: "#595959", faint: "#676767", label: "#A63C00",
+      buy: "#00695C", sell: "#B5001C", flat: "#676767", fuel: "#2A2A2A", fuelWeak: "#595959", maker: "#2A2A2A",
+      alert: "#8A6400", onAlert: "#FFFFFF", warn: "#8A6400", hatchSell: false, ok: "#000000" }),
+    mono: T({ mode: "dark", bg: "#000000", panel: "#000000", raise: "#0C0C0C", strip: "#191919", rule: "#505050", hair: "#232323",
+      ink: "#FFFFFF", ink2: "#D7D7D7", muted: "#8E8E8E", faint: "#7C7C7C", label: "#ABABAB",
+      buy: "#FFFFFF", sell: "#BDBDBD", flat: "#7C7C7C", fuel: "#D7D7D7", fuelWeak: "#8E8E8E", maker: "#D7D7D7",
+      alert: "#FFFFFF", onAlert: "#000000", warn: "#FFFFFF", hatchSell: true, sellStyle: "hatch", fuelStyle: "dots", noHue: true, ok: "#FFFFFF" }),
+    read: T({ mode: "light", bg: "#E8E8E8", panel: "#E8E8E8", raise: "#DEDEDE", strip: "#D4D4D4", rule: "#8E8E8E", hair: "#D0D0D0",
+      ink: "#1A1A1A", ink2: "#363636", muted: "#5A5A5A", faint: "#5A5A5A", label: "#505050",
+      buy: "#1A1A1A", sell: "#4A4A4A", flat: "#5A5A5A", fuel: "#363636", fuelWeak: "#5A5A5A", maker: "#363636",
+      alert: "#1A1A1A", onAlert: "#E8E8E8", warn: "#1A1A1A", hatchSell: true, sellStyle: "hatch", fuelStyle: "dots", noHue: true, ok: "#1A1A1A" }),
+    warm: T({ mode: "dark", bg: "#000000", panel: "#000000", raise: "#110A04", strip: "#1C1108", rule: "#5A3A1E", hair: "#27180B",
+      ink: "#FFD2A0", ink2: "#E0AC78", muted: "#B8875A", faint: "#A37445", label: "#FFA028",
+      buy: "#FFE066", sell: "#FF5238", flat: "#A37445", fuel: "#E0AC78", fuelWeak: "#B8875A", maker: "#E0AC78",
+      alert: "#FFC800", onAlert: "#000000", warn: "#FFC800", hatchSell: false, ok: "#FFD2A0" }),
   };
   /** Roles that are drawn as text and must reach 4.5:1 on bg and panel. */
   const TEXT_ROLES = ["ink", "ink2", "muted", "faint", "label", "buy", "sell", "alert", "warn", "fuel"];
@@ -488,8 +475,8 @@
     return fails;
   }
   const Tokens = { themes, TEXT_ROLES, contrast, deltaE, checkTheme,
-    /** Theme by name, falling back to night. */
-    get(name) { return themes[name] || themes.night; },
+    /** Theme by name, falling back to desk. */
+    get(name) { return Object.hasOwn(themes, name) ? themes[name] : themes.desk; },
     /** CSS custom properties for a theme ("--buy: #3987e5; ..."). */
     css(name) { const t = Tokens.get(name); return Object.keys(t).filter(k => typeof t[k] === "string" && t[k][0] === "#").map(k => `--${k.replace(/[A-Z]/g, c => "-" + c.toLowerCase())}: ${t[k]};`).join(" "); },
   };
